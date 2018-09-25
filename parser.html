@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Demo Parser | nekzor.github.io</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>.link { color: white } .link:hover { color: aquamarine }</style>
+</head>
+
+<body class="white-text blue-grey darken-4">
+    <nav class="nav-extended blue-grey darken-3">
+        <div class="nav-wrapper">
+            <div class="col s12 hide-on-small-only">
+                <a href="#" data-target="slide-out" class="sidenav-trigger show-on-large"><i class="material-icons">menu</i></a>
+                <a href="index.html">&nbsp;&nbsp;&nbsp;nekzor.github.io</a>
+                <a class="breadcrumb"></a>
+                <a href="parser.html">Demo Parser</a>
+            </div>
+            <div class="col s12 hide-on-med-and-up">
+                <a href="#" data-target="slide-out" class="sidenav-trigger"><i class="material-icons">menu</i></a>
+                <a href="parser.html" class="brand-logo center">DP</a>
+            </div>
+        </div>
+        <div class="nav-content">
+            <ul class="tabs tabs-transparent">
+                <li class="tab"><a href="#inspect">Inspect</a></li>
+                <li class="tab"><a href="#list">List</a></li>
+                <li class="tab"><a href="#about">About</a></li>
+            </ul>
+        </div>
+    </nav>
+    <ul id="slide-out" class="sidenav">
+        <li><a href="index.html">nekzor.github.io</a></li>
+        <li><a href="glitches.html">Glitches</a></li>
+        <li><a href="lp.html">Least Portals</a></li>
+        <li><a href="parser.html">Demo Parser</a></li>
+    </ul>
+    <div id="inspect">
+        <div class="row"></div>
+        <div class="row">
+            <div class="col s12 m12 l8 push-l2">
+                <form action="#">
+                    <div class="file-field input-field">
+                        <div class="btn green darken-2">
+                            <span>File</span>
+                            <input type="file" id="file-input">
+                        </div>
+                        <div class="file-path-wrapper">
+                            <input class="file-path validate white-text" type="text">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col s12 m6 l4 push-l2" style="height:100%;position: absolute;" ondrop="dropHandler(event)"
+                ondragover="dragOverHandler(event)">
+                <pre id="file-content"></pre>
+            </div>
+            <div class="col s12 m6 push-m6 l4 push-l6 hide-on-small-only">
+                <div id="plot"></div>
+            </div>
+        </div>
+    </div>
+    <div id="list">
+        <div class="row"></div>
+        <div class="row">
+            <div class="col s12 m12 l8 push-l2" ondrop="dropHandler(event)" ondragover="dragOverHandler(event)">
+                <table class="highlight">
+                    <thead>
+                        <tr>
+                            <th>Map</th>
+                            <th>Client</th>
+                            <th>Ticks</th>
+                            <th>Time</th>
+                            <th>Total Ticks</th>
+                            <th>Total Time</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-entries"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col s12 m12 l1 push-l2">
+                <div class="file-field input-field">
+                    <div class="btn-floating waves-effect waves-light green" title="Add Demo">
+                        <i class="material-icons">add</i>
+                        <input id="add-list" type="file" multiple>
+                    </div>
+                    &nbsp;&nbsp;&nbsp;
+                    <div id="clear-list" class="btn-floating waves-effect waves-light green" title="Clear All">
+                        <i class="material-icons">clear_all</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="about">
+        <div class="row">
+            <div class="row"></div>
+            <div class="row">
+                <div class="col s12 m12 l10 push-l2">
+                    <h3><a class="link" href="https://github.com/NeKzor/sdp.js">sdp.js</a></h3>
+                    <p>
+                        Experimental Source Engine demo parser for Node.js.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script type="text/javascript" src="js/browser.sdp.js"></script>
+    <script type="text/javascript">
+        var tabs = M.Tabs.init(document.querySelector('.tabs'), null);
+        var sidenav = M.Sidenav.init(document.querySelectorAll('.sidenav'), null);
+
+        var fileContent = document.getElementById('file-content');
+        var tableEntries = document.getElementById('table-entries');
+
+        var parser = new sdp.SourceDemoParser();
+        var game = new sdp.SourceGame();
+
+        var demo = null;
+        var demos = [];
+        var positions = null;
+        var commands = null;
+
+        var plotData = {
+            mode: 'lines',
+            line: {
+                color: '#1f77b4',
+                width: 3
+            },
+            type: 'scatter3d'
+        };
+        var plotLayout = {
+            title: 'View Origin',
+            width: 460,
+            height: 350,
+            margin: {
+                l: 0,
+                r: 0,
+                b: 0,
+                t: 100
+            },
+            scene: {
+                aspectmode: 'data'
+            }
+        };
+
+        var updatePlot = () => {
+            Plotly.newPlot('plot', [plotData], plotLayout);
+        };
+
+        var dropHandler = (ev) => {
+            ev.preventDefault();
+
+            let files = [];
+
+            if (ev.dataTransfer.items) {
+                for (let i = 0; i < ev.dataTransfer.items.length; ++i) {
+                    if (ev.dataTransfer.items[i].kind === 'file') {
+                        files.push(ev.dataTransfer.items[i].getAsFile());
+                    }
+                }
+            }
+
+            if (files.length == 1) {
+                parseSingleFile(files[0]);
+            } else if (files.length > 0) {
+                parseMultipleFiles(files);
+            }
+
+            removeDragData(ev)
+        };
+        var dragOverHandler = (ev) => {
+            ev.preventDefault();
+        };
+        var removeDragData = (ev) => {
+            if (ev.dataTransfer.items) {
+                ev.dataTransfer.items.clear();
+            } else {
+                ev.dataTransfer.clearData();
+            }
+        };
+
+        var parseSingleFile = (file) => {
+            let reader = new FileReader();
+            reader.onload = (ev) => {
+                demo = parser.parseDemo(new Buffer(ev.target.result));
+                demo.adjust(0, 0, game);
+                displayInspection();
+            };
+            reader.readAsArrayBuffer(file);
+        };
+        var parseMultipleFiles = (files) => {
+            var count = 0;
+            for (let file of files) {
+                let reader = new FileReader();
+                reader.onload = (ev) => {
+                    let demo = parser.parseDemo(new Buffer(ev.target.result));
+                    demo.adjust(0, 0, game);
+                    demos.push(demo);
+                    if (++count == files.length) {
+                        displayList();
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        };
+
+        var inspectListItem = (index) => {
+            demo = demos[index];
+            displayInspection();
+            tabs.select('inspect');
+            window.scrollTo(0, 0);
+        };
+        var removeListItem = (index) => {
+            demos = demos.filter(demo => demo != demos[index]);
+            displayList();
+        };
+        var clearList = () => {
+            demos = [];
+            tableEntries.innerHTML = '';
+        };
+        var displayList = () => {
+            tableEntries.innerHTML = '';
+
+            let curTicks = 0;
+            let curTime = 0;
+            let index = 0;
+            for (let demo of demos) {
+                curTicks += demo.header.playbackTicks;
+                curTime += demo.header.playbackTime;
+
+                let entry = document.createElement('tr');
+                let map = document.createElement('td');
+                let client = document.createElement('td');
+                let ticks = document.createElement('td');
+                let time = document.createElement('td');
+                let totalTicks = document.createElement('td');
+                let totalTime = document.createElement('td');
+                let btnInspect = document.createElement('td');
+                let btnRemove = document.createElement('td');
+
+                map.innerHTML = demo.header.mapName;
+                client.innerHTML = demo.header.clientName;
+                ticks.innerHTML = demo.header.playbackTicks;
+                time.innerHTML = demo.header.playbackTime.toFixed(3);
+                totalTicks.innerHTML = curTicks;
+                totalTime.innerHTML = curTime.toFixed(3);
+                btnInspect.innerHTML = `
+                    <div class="btn-floating waves-effect waves-light green" title="Inspect Demo"
+                        onclick="inspectListItem(${index})">
+                        <i class="material-icons">search</i>
+                    </div>`;
+                btnRemove.innerHTML = `
+                    <div class="btn-floating waves-effect waves-light green" title="Remove Demo"
+                        onclick="removeListItem(${index})">
+                        <i class="material-icons">clear</i>
+                    </div>`;
+
+                entry.appendChild(map);
+                entry.appendChild(client);
+                entry.appendChild(ticks);
+                entry.appendChild(time);
+                entry.appendChild(totalTicks);
+                entry.appendChild(totalTime);
+                entry.appendChild(btnInspect);
+                entry.appendChild(btnRemove);
+
+                tableEntries.appendChild(entry);
+                ++index;
+            }
+        };
+        var displayInspection = () => {
+            fileContent.innerHTML = '';
+            if (demo !== null) {
+                fileContent.innerHTML += `Header:&#10;${JSON.stringify(demo.header, null, 4)}&#10;&#10;Commands:&#10;`;
+
+                positions = {
+                    x: [],
+                    y: [],
+                    z: [],
+                    lable: []
+                };
+                commands = {};
+
+                demo.messages.forEach((msg) => {
+                    if (msg.type == 0x02
+                        && msg.message.packetInfo[0].viewOrigin[0].x != 0
+                        && msg.message.packetInfo[0].viewOrigin[0].y != 0
+                        && msg.message.packetInfo[0].viewOrigin[0].z != 0) {
+                        positions.x.push(msg.message.packetInfo[0].viewOrigin[0].x);
+                        positions.y.push(msg.message.packetInfo[0].viewOrigin[0].y);
+                        positions.z.push(msg.message.packetInfo[0].viewOrigin[0].z);
+                        positions.lable.push(`Tick ${msg.tick}`);
+                    } else if (msg.type == 0x04) {
+                        commands[msg.tick] = msg.message.command;
+                    }
+                });
+
+                fileContent.innerHTML += `${JSON.stringify(commands, null, 4)}&#10;`;
+
+                plotData.x = positions.x;
+                plotData.y = positions.y;
+                plotData.z = positions.z;
+                plotData.text = positions.lable;
+
+                updatePlot();
+            }
+        };
+
+        var getSingleFile = (ev) => {
+            let file = ev.target.files[0];
+            if (!file) {
+                return;
+            }
+            parseSingleFile(file);
+        };
+        var getMultipleFiles = (ev) => {
+            let files = ev.target.files;
+            if (files.length == 0) {
+                return;
+            }
+            parseMultipleFiles(files);
+        };
+
+        document.getElementById('file-input').addEventListener('change', getSingleFile, false);
+        document.getElementById('add-list').addEventListener('change', getMultipleFiles, false);
+        document.getElementById('clear-list').addEventListener('click', clearList, false);
+    </script>
+</body>
+
+</html>
