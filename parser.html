@@ -5,7 +5,7 @@
     <title>Demo Parser | nekzor.github.io</title>
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>.link { color: white } .link:hover { color: aquamarine }</style>
 </head>
@@ -82,7 +82,8 @@
                             <th></th>
                         </tr>
                     </thead>
-                    <tbody id="table-entries"></tbody>
+                    <tbody id="table-entries">
+                    </tbody>
                 </table>
             </div>
         </div>
@@ -124,13 +125,15 @@
         var fileContent = document.getElementById('file-content');
         var tableEntries = document.getElementById('table-entries');
 
-        var parser = new sdp.SourceDemoParser();
-        var game = new sdp.SourceGame();
+        var parser = sdp.SourceDemoParser.default()
+            .withAutoAdjustment(true)
+            .withDefaultGame(new sdp.SourceGame());
 
         var demo = null;
         var demos = [];
         var positions = null;
         var commands = null;
+        var sortByFileName = true;
 
         var plotData = {
             mode: 'lines',
@@ -195,27 +198,53 @@
             let reader = new FileReader();
             reader.onload = (ev) => {
                 demo = parser.parseDemo(new Buffer(ev.target.result));
-                demo.adjust(0, 0, game);
                 displayInspection();
             };
             reader.readAsArrayBuffer(file);
         };
         var parseMultipleFiles = (files) => {
-            var count = 0;
+            let count = 0;
+            let index = 0;
             for (let file of files) {
+                let fileInfo = {
+                    index: index++,
+                    name: file.name
+                };
+
                 let reader = new FileReader();
                 reader.onload = (ev) => {
+                    let source = ev.target.source;
+                    console.log(`Parsing: ${source.name}`);
+
                     let demo = parser.parseDemo(new Buffer(ev.target.result));
-                    demo.adjust(0, 0, game);
+                    demo.fileInfo = source;
                     demos.push(demo);
+
                     if (++count == files.length) {
                         displayList();
                     }
                 };
+                reader.source = fileInfo;
                 reader.readAsArrayBuffer(file);
             }
         };
 
+        var formatTime = (time) => {
+            let sec = Math.floor(time);
+            let ms = Math.ceil((time - sec) * 1000);
+
+            if (sec >= 60) {
+                let min = sec / 60;
+                sec = sec % 60;
+                if (min >= 60) {
+                    let hrs = min / 60;
+                    min = Math.floor(min % 60);
+                    return `${Math.floor(hrs)}:${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+                }
+                return `${Math.floor(min)}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+            }
+            return `${Math.floor(sec)}.${ms.toString().padStart(3, '0')}`;
+        };
         var inspectListItem = (index) => {
             demo = demos[index];
             displayInspection();
@@ -236,12 +265,17 @@
             let curTicks = 0;
             let curTime = 0;
             let index = 0;
+
+            if (sortByFileName) {
+                demos = demos.sort((a, b) => (a.fileInfo.index < b.fileInfo.index) ? -1 : 1);
+            }
+
             for (let demo of demos) {
                 curTicks += demo.header.playbackTicks;
                 curTime += demo.header.playbackTime;
 
-                let entry = document.createElement('tr');
                 let map = document.createElement('td');
+                map.setAttribute('title', demo.fileInfo.name);
                 let client = document.createElement('td');
                 let ticks = document.createElement('td');
                 let time = document.createElement('td');
@@ -253,9 +287,9 @@
                 map.innerHTML = demo.header.mapName;
                 client.innerHTML = demo.header.clientName;
                 ticks.innerHTML = demo.header.playbackTicks;
-                time.innerHTML = demo.header.playbackTime.toFixed(3);
+                time.innerHTML = formatTime(demo.header.playbackTime);
                 totalTicks.innerHTML = curTicks;
-                totalTime.innerHTML = curTime.toFixed(3);
+                totalTime.innerHTML = formatTime(curTime);
                 btnInspect.innerHTML = `
                     <div class="btn-floating waves-effect waves-light green" title="Inspect Demo"
                         onclick="inspectListItem(${index})">
@@ -267,6 +301,7 @@
                         <i class="material-icons">clear</i>
                     </div>`;
 
+                let entry = document.createElement('tr');
                 entry.appendChild(map);
                 entry.appendChild(client);
                 entry.appendChild(ticks);

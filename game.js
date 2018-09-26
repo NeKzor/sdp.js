@@ -6,16 +6,18 @@ var SourceGames = [
 ];
 
 class SourceGame {
-    constructor(gameList = undefined) {
-        this.gameList = (gameList == undefined) ? SourceGames : gameList;
+    constructor() {
+        this.gameList = SourceGames;
+    }
+    static default() {
+        return new SourceGame();
+    }
+    withGameList(gameList) {
+        this.gameList = gameList;
+        return this;
     }
     adjustByRules(demo) {
-        let game = this.gameList.find((game) => {
-            return demo.header.gameDirectory == game.directory
-                && demo.tickrate() == game.tickrate;
-        });
-
-        if (game != undefined) {
+        if (demo.game != undefined && demo.game.tickrate == demo.tickrate()) {
             let gameInfo = (() => {
                 let map = new Map();
 
@@ -97,7 +99,7 @@ class SourceGame {
             };
 
             let getRules = (type) => {
-                let candidates = game.rules.filter(rule => rule.type == type);
+                let candidates = demo.game.rules.filter(rule => rule.type == type);
 
                 let rules = candidates.filter(rule => {
                     if (Array.isArray(rule.map)) {
@@ -117,13 +119,13 @@ class SourceGame {
             let endTick = checkRules(getRules('end'));
 
             if (startTick != undefined && endTick != undefined) {
-                return demo.adjust(endTick, startTick);
+                return demo.adjustRange(endTick, startTick);
             }
             if (startTick != undefined) {
-                return demo.adjust(0, startTick);
+                return demo.adjustRange(0, startTick);
             }
             if (endTick != undefined) {
-                return demo.adjust(endTick, 0);
+                return demo.adjustRange(endTick, 0);
             }
         }
 
