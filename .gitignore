@@ -4,4 +4,4 @@ js/
 node_modules/
 
 package-lock.json
-parser.html
+*.html
