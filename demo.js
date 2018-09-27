@@ -27,7 +27,7 @@ class SourceDemo {
             }
             throw new Error('Cannot find tickrate of null tick demo.');
         }
-        return Math.ceil(this.header.playbackTicks / this.header.playbackTime);
+        return this.header.playbackTicks / this.header.playbackTime;
     }
     adjustTicks() {
         if (this.messages.length == 0) {
@@ -48,6 +48,8 @@ class SourceDemo {
             }
             last = message.tick;
         }
+
+        return this;
     }
     adjustRange(endTick = 0, startTick = 0) {
         if (this.messages.length == 0) {

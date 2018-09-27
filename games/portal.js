@@ -1,6 +1,6 @@
 var Portal = {
     directory: 'portal',
-    tickrate: 66,
+    tickrate: 1 / 0.015,
     rules: [
         {
             map: 'testchmb_a_00',
@@ -20,7 +20,7 @@ var Portal = {
             map: 'escape_02',
             offset: 1,
             type: 'end',
-            callback: (_, cmd) => {
+            callback: (_, cmds) => {
                 if (cmds != undefined) {
                     return cmds.current.includes('startneurotoxins 99999');
                 }

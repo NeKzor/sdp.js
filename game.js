@@ -17,7 +17,7 @@ class SourceGame {
         return this;
     }
     adjustByRules(demo) {
-        if (demo.game != undefined && demo.game.tickrate == demo.tickrate()) {
+        if (demo.game != undefined) {
             let gameInfo = (() => {
                 let map = new Map();
 

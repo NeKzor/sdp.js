@@ -29,7 +29,7 @@ var PortalStoriesMel = {
             ],
             offset: 0,
             type: 'end',
-            callback: (_, cmd) => {
+            callback: (_, cmds) => {
                 if (cmds != undefined) {
                     let outro = 'playvideo_exitcommand_nointerrupt aegis_interior.bik end_movie movie_aegis_interior';
                     return cmds.current.includes(outro);

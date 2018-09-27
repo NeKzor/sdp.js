@@ -23,7 +23,7 @@ var ApertureTag = {
             map: 'gg_stage_theend',
             offset: 0,
             type: 'end',
-            callback: (_, cmd) => {
+            callback: (_, cmds) => {
                 if (cmds != undefined) {
                     let outro = 'playvideo_exitcommand_nointerrupt at_credits end_movie credits_video';
                     return cmds.current.includes(outro);
