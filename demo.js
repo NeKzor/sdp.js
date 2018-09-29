@@ -9,7 +9,7 @@ class SourceDemo {
         if (this.game != undefined) {
             this.game.source = sourceGame;
         }
-        return this.game;
+        return this;
     }
     intervalPerTick() {
         if (this.header.playbackTicks == 0) {
