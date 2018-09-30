@@ -48,7 +48,7 @@ var syncTickParser = new Parser();
 var consoleCmdParser = new Parser()
     .endianess('little')
     .int32('size')
-    .string('command', { encoding: 'ascii', length: 'size', stripNull: true });
+    .string('command', { encoding: 'utf8', length: 'size', stripNull: true });
 
 // 0x05
 var userCmdParser = new Parser()
@@ -119,13 +119,13 @@ var oldMessageParser = new Parser()
 
 var headerParser = new Parser()
     .endianess('little')
-    .string('demoFileStamp', { encoding: 'ascii', length: 8, stripNull: true })
+    .string('demoFileStamp', { encoding: 'utf8', length: 8, stripNull: true })
     .int32('demoProtocol')
     .int32('networkProtocol')
-    .string('serverName', { encoding: 'ascii', length: 260, stripNull: true })
-    .string('clientName', { encoding: 'ascii', length: 260, stripNull: true })
-    .string('mapName', { encoding: 'ascii', length: 260, stripNull: true })
-    .string('gameDirectory', { encoding: 'ascii', length: 260, stripNull: true })
+    .string('serverName', { encoding: 'utf8', length: 260, stripNull: true })
+    .string('clientName', { encoding: 'utf8', length: 260, stripNull: true })
+    .string('mapName', { encoding: 'utf8', length: 260, stripNull: true })
+    .string('gameDirectory', { encoding: 'utf8', length: 260, stripNull: true })
     .float('playbackTime')
     .int32('playbackTicks')
     .int32('playbackFrames')
