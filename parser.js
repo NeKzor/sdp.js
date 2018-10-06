@@ -1,4 +1,6 @@
-var Parser = require('binary-parser').Parser;
+var { Parser } = require('binary-parser');
+var { BitStream } = require('bit-buffer');
+var { SourceDemo } = require('./demo.js');
 
 var dataParser = new Parser()
     .endianess('little')
@@ -131,8 +133,6 @@ var headerParser = new Parser()
     .int32('playbackFrames')
     .int32('signOnLength');
 
-var { SourceDemo } = require('./demo.js');
-
 class SourceDemoParser {
     constructor() {
         this.headerOnly = false;
@@ -224,6 +224,33 @@ class SourceDemoParser {
         }
 
         return demo;
+    }
+    encodeUserCmdMessages(demo) {
+        let result = [];
+        for (let message of demo.messages) {
+            if (message.type == 0x05 && message.message.data[0].size > 0) {
+                let buf = new BitStream(new Buffer(message.message.data[0].data));
+                let cmd = { source: message };
+                if (buf.readBoolean()) cmd.commandNumber = buf.readInt32();
+                if (buf.readBoolean()) cmd.tickCount = buf.readInt32();
+                if (buf.readBoolean()) cmd.viewAngleX = buf.readFloat32();
+                if (buf.readBoolean()) cmd.viewAngleY = buf.readFloat32();
+                if (buf.readBoolean()) cmd.viewAngleZ = buf.readFloat32();
+                if (buf.readBoolean()) cmd.forwardMove = buf.readFloat32();
+                if (buf.readBoolean()) cmd.sideMove = buf.readFloat32();
+                if (buf.readBoolean()) cmd.upMove = buf.readFloat32();
+                if (buf.readBoolean()) cmd.buttons = buf.readInt32();
+                if (buf.readBoolean()) cmd.impulse = buf.readInt8();
+                if (buf.readBoolean()) {
+                    cmd.weaponSelect = buf.readBits(11);
+                    if (buf.readBoolean()) cmd.weaponSubtype = buf.readBits(6);
+                }
+                if (buf.readBoolean()) cmd.mouseDx = buf.readInt16();
+                if (buf.readBoolean()) cmd.mouseDy = buf.readInt16();
+                result.push(cmd);
+            }
+        }
+        return result;
     }
 }
 
