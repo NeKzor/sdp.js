@@ -71,11 +71,11 @@ class SourceDemo {
 
         return this;
     }
-    adjust() {
+    adjust(splitScreenIndex = 0) {
         this.adjustTicks();
         this.adjustRange();
         return (this.game != undefined)
-            ? this.game.source.adjustByRules(this)
+            ? this.game.source.adjustByRules(this, splitScreenIndex)
             : this;
     }
 }

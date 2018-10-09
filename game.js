@@ -16,7 +16,7 @@ class SourceGame {
         this.gameList = gameList;
         return this;
     }
-    adjustByRules(demo) {
+    adjustByRules(demo, splitScreenIndex = 0) {
         if (demo.game != undefined) {
             let gameInfo = (() => {
                 let map = new Map();
@@ -33,7 +33,7 @@ class SourceGame {
                 for (let [tick, info] of map) {
                     let packet = packets.find(p => p.tick == tick);
                     if (packet != undefined) {
-                        let newPosition = packet.message.packetInfo[0].viewOrigin[0];
+                        let newPosition = packet.message.packetInfo[splitScreenIndex].viewOrigin[0];
                         if (newPosition != undefined) {
                             info.position = {
                                 previous: oldPosition,
