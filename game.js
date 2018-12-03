@@ -31,6 +31,10 @@ class SourceGame {
                 let oldCommands = [];
 
                 for (let [tick, info] of map) {
+                    if (tick == 0) {
+                        continue;
+                    }
+
                     let packet = packets.find(p => p.tick == tick);
                     if (packet != undefined) {
                         let newPosition = packet.message.packetInfo[splitScreenIndex].viewOrigin[0];
@@ -73,17 +77,13 @@ class SourceGame {
                         return matches[0].tick + matches[0].rule.offset;
                     }
 
-                    let isStart = matches[0].rule.type == 'start';
-                    let matchTick = (isStart)
-                        ? matches.map(m => m.tick).reduce((a, b) => Math.max(a, b))
-                        : matches.map(m => m.tick).reduce((a, b) => Math.min(a, b));
-
+                    let matchTick = matches.map(m => m.tick).reduce((a, b) => Math.min(a, b))
                     matches = matches.filter(m => m.tick == matchTick);
                     if (matches.length == 1) {
                         return matches[0].tick + matches[0].rule.offset;
                     }
 
-                    let matchOffset = (isStart)
+                    let matchOffset = (matches[0].rule.type == 'start')
                         ? matches.map(m => m.rule.offset).reduce((a, b) => Math.min(a, b))
                         : matches.map(m => m.rule.offset).reduce((a, b) => Math.max(a, b));
 

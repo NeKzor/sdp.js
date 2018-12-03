@@ -37,7 +37,7 @@ var ApertureTag = {
             type: 'start',
             callback: (_, cmds) => {
                 if (cmds != undefined) {
-                    return cmds.previous.find(cmd => cmd.startsWith('dsp_player')) != undefined
+                    return cmds.current.includes('dsp_player 0')
                         && cmds.current.includes('ss_force_primary_fullscreen 0');
                 }
                 return false;
@@ -49,10 +49,7 @@ var ApertureTag = {
             type: 'end',
             callback: (_, cmds) => {
                 if (cmds != undefined) {
-                    let outroBlue = 'playvideo_end_level_transition coop_bluebot_load 2';
-                    let outroOrange = 'playvideo_end_level_transition coop_orangebot_load 2';
-                    return cmds.current.find(cmd => cmd.startsWith(outroBlue) || cmd.startsWith(outroOrange))
-                        != undefined;
+                    return cmds.current.find(cmd => cmd.startsWith('playvideo_end_level_transition')) != undefined;
                 }
                 return false;
             }
