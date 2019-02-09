@@ -1,7 +1,7 @@
 {
     "name": "sdp.js",
     "version": "1.0.0",
-    "description": "Experimental Source Engine demo parser for Node.js.",
+    "description": "Simple Source Engine demo parser for Node.js.",
     "keywords": [
         "demo-parser",
         "source-engine",
