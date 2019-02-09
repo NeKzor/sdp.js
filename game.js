@@ -18,7 +18,7 @@ class SourceGame {
     }
     adjustByRules(demo, splitScreenIndex = 0) {
         if (demo.game != undefined) {
-            let gameInfo = (() => {
+            let getGameInfo = () => {
                 let map = new Map();
 
                 let packets = demo.messages.filter(msg => msg.type == 0x02);
@@ -56,12 +56,14 @@ class SourceGame {
                 }
 
                 return map;
-            })();
+            };
 
             let checkRules = (rules) => {
                 if (rules.length == 0) {
                     return undefined;
                 }
+
+                let gameInfo = getGameInfo();
 
                 let matches = [];
                 for (let [tick, info] of gameInfo) {
