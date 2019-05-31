@@ -1,6 +1,6 @@
 const { SourceDemo, SourceGames, SourceGame, SourceDemoParser } = require('../sdp.js');
 const assert = require('assert');
-var fs = require('fs');
+const fs = require('fs');
 
 describe('SourceDemoParser', () => {
     describe('#Portal', () => {
