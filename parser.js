@@ -229,8 +229,12 @@ class SourceDemoParser {
         let result = [];
         for (let message of demo.messages) {
             if (message.type == 0x05 && message.message.data[0].size > 0) {
-                let buf = new BitStream(new Buffer(message.message.data[0].data));
+                let temp = Buffer.from(message.message.data[0].data);
+                let buf = new BitStream(temp);
+                buf._view._view = new Uint8Array(temp);
+
                 let cmd = { source: message };
+
                 if (buf.readBoolean()) cmd.commandNumber = buf.readInt32();
                 if (buf.readBoolean()) cmd.tickCount = buf.readInt32();
                 if (buf.readBoolean()) cmd.viewAngleX = buf.readFloat32();
