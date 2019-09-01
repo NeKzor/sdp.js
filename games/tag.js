@@ -1,4 +1,4 @@
-var ApertureTag = {
+const ApertureTag = {
     directory: 'aperturetag',
     tickrate: 60,
     rules: [
@@ -8,16 +8,18 @@ var ApertureTag = {
             type: 'start',
             callback: (pos, _) => {
                 if (pos != undefined) {
-                    let startPos = { x: -723.00, y: -2481.00, z: 17.00 };
-                    return pos.previous.x == startPos.x
-                        && pos.previous.y == startPos.y
-                        && pos.previous.z == startPos.z
-                        && pos.current.x != startPos.x
-                        && pos.current.y != startPos.y
-                        && pos.current.z != startPos.z;
+                    let startPos = { x: -723.0, y: -2481.0, z: 17.0 };
+                    return (
+                        pos.previous.x === startPos.x &&
+                        pos.previous.y === startPos.y &&
+                        pos.previous.z === startPos.z &&
+                        pos.current.x != startPos.x &&
+                        pos.current.y != startPos.y &&
+                        pos.current.z != startPos.z
+                    );
                 }
                 return false;
-            }
+            },
         },
         {
             map: 'gg_stage_theend',
@@ -29,7 +31,7 @@ var ApertureTag = {
                     return cmds.current.includes(outro);
                 }
                 return false;
-            }
+            },
         },
         {
             map: undefined,
@@ -37,11 +39,10 @@ var ApertureTag = {
             type: 'start',
             callback: (_, cmds) => {
                 if (cmds != undefined) {
-                    return cmds.current.includes('dsp_player 0')
-                        && cmds.current.includes('ss_force_primary_fullscreen 0');
+                    return cmds.current.includes('dsp_player 0') && cmds.current.includes('ss_force_primary_fullscreen 0');
                 }
                 return false;
-            }
+            },
         },
         {
             map: undefined,
@@ -49,12 +50,12 @@ var ApertureTag = {
             type: 'end',
             callback: (_, cmds) => {
                 if (cmds != undefined) {
-                    return cmds.current.find(cmd => cmd.startsWith('playvideo_end_level_transition')) != undefined;
+                    return cmds.current.find((cmd) => cmd.startsWith('playvideo_end_level_transition')) != undefined;
                 }
                 return false;
-            }
-        }
-    ]
+            },
+        },
+    ],
 };
 
 module.exports = ApertureTag;

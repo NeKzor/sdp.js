@@ -1,4 +1,5 @@
-var SourceGames = [
+// prettier-ignore
+const SourceGames = [
     require('./games/portal.js'),
     require('./games/portal2.js'),
     require('./games/mel.js'),
@@ -21,36 +22,36 @@ class SourceGame {
             let getGameInfo = () => {
                 let map = new Map();
 
-                let packets = demo.messages.filter(msg => msg.type == 0x02);
-                let commands = demo.messages.filter(msg => msg.type == 0x04);
+                let packets = demo.messages.filter((msg) => msg.type === 0x02);
+                let commands = demo.messages.filter((msg) => msg.type === 0x04);
 
-                packets.forEach(p => map.set(p.tick, {}));
-                commands.forEach(p => map.set(p.tick, {}));
+                packets.forEach((p) => map.set(p.tick, {}));
+                commands.forEach((p) => map.set(p.tick, {}));
 
                 let oldPosition = { x: 0, y: 0, z: 0 };
                 let oldCommands = [];
 
                 for (let [tick, info] of map) {
-                    if (tick == 0) {
+                    if (tick === 0) {
                         continue;
                     }
 
-                    let packet = packets.find(p => p.tick == tick);
+                    let packet = packets.find((p) => p.tick === tick);
                     if (packet != undefined) {
                         let newPosition = packet.message.packetInfo[splitScreenIndex].viewOrigin[0];
                         if (newPosition != undefined) {
                             info.position = {
                                 previous: oldPosition,
-                                current: oldPosition = newPosition
+                                current: (oldPosition = newPosition),
                             };
                         }
                     }
 
-                    let newCommands = commands.filter(c => c.tick == tick).map(c => c.message.command);
+                    let newCommands = commands.filter((c) => c.tick === tick).map((c) => c.message.command);
                     if (newCommands.length != 0) {
                         info.commands = {
                             previous: oldCommands,
-                            current: oldCommands = newCommands
+                            current: (oldCommands = newCommands),
                         };
                     }
                 }
@@ -59,7 +60,7 @@ class SourceGame {
             };
 
             let checkRules = (rules) => {
-                if (rules.length == 0) {
+                if (rules.length === 0) {
                     return undefined;
                 }
 
@@ -68,29 +69,30 @@ class SourceGame {
                 let matches = [];
                 for (let [tick, info] of gameInfo) {
                     for (let rule of rules) {
-                        if (rule.callback(info.position, info.commands) == true) {
+                        if (rule.callback(info.position, info.commands) === true) {
                             matches.push({ rule: rule, tick: tick });
                         }
                     }
                 }
 
                 if (matches.length > 0) {
-                    if (matches.length == 1) {
+                    if (matches.length === 1) {
                         return matches[0].tick + matches[0].rule.offset;
                     }
 
-                    let matchTick = matches.map(m => m.tick).reduce((a, b) => Math.min(a, b))
-                    matches = matches.filter(m => m.tick == matchTick);
-                    if (matches.length == 1) {
+                    let matchTick = matches.map((m) => m.tick).reduce((a, b) => Math.min(a, b));
+                    matches = matches.filter((m) => m.tick === matchTick);
+                    if (matches.length === 1) {
                         return matches[0].tick + matches[0].rule.offset;
                     }
 
-                    let matchOffset = (matches[0].rule.type == 'start')
-                        ? matches.map(m => m.rule.offset).reduce((a, b) => Math.min(a, b))
-                        : matches.map(m => m.rule.offset).reduce((a, b) => Math.max(a, b));
+                    let matchOffset =
+                        matches[0].rule.type === 'start'
+                            ? matches.map((m) => m.rule.offset).reduce((a, b) => Math.min(a, b))
+                            : matches.map((m) => m.rule.offset).reduce((a, b) => Math.max(a, b));
 
-                    matches = matches.filter(m => m.rule.offset == matchOffset);
-                    if (matches.length == 1) {
+                    matches = matches.filter((m) => m.rule.offset === matchOffset);
+                    if (matches.length === 1) {
                         return matches[0].tick + matches[0].rule.offset;
                     }
 
@@ -101,17 +103,17 @@ class SourceGame {
             };
 
             let getRules = (type) => {
-                let candidates = demo.game.rules.filter(rule => rule.type == type);
+                let candidates = demo.game.rules.filter((rule) => rule.type === type);
 
-                let rules = candidates.filter(rule => {
+                let rules = candidates.filter((rule) => {
                     if (Array.isArray(rule.map)) {
                         return rule.map.includes(demo.header.mapName);
                     }
-                    return rule.map == demo.header.mapName;
+                    return rule.map === demo.header.mapName;
                 });
 
-                if (rules.length == 0) {
-                    rules = candidates.filter(rule => rule.map == undefined);
+                if (rules.length === 0) {
+                    rules = candidates.filter((rule) => rule.map === undefined);
                 }
 
                 return rules;

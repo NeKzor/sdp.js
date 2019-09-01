@@ -1,24 +1,27 @@
-var { Parser } = require('binary-parser');
-var { BitStream } = require('bit-buffer');
-var { SourceDemo } = require('./demo.js');
+const { Parser } = require('binary-parser');
+const { BitStream } = require('bit-buffer');
+const { SourceDemo } = require('./demo.js');
+const { SendPropFlags, SendPropType } = require('./extensions/DataTables');
+const StringTables = require('./extensions/StringTables');
+const NetMessages = require('./extensions/NetMessages');
 
-var dataParser = new Parser()
+const dataParser = new Parser()
     .endianess('little')
     .int32('size')
     .array('data', { type: 'int8', lengthInBytes: 'size' });
 
 // Vector
-var vectorParser = new Parser()
+const vectorParser = new Parser()
     .endianess('little')
     .float('x') // vec_t 0-4
     .float('y') // vec_t 5-8
     .float('z'); // vec_t 9-12
 
 // QAngle
-var qAngleParser = vectorParser;
+const qAngleParser = vectorParser;
 
 // democmdinfo_t
-var cmdInfoParser = new Parser()
+const cmdInfoParser = new Parser()
     .endianess('little')
     .int32('flags')
     .array('viewOrigin', { length: 1, type: vectorParser })
@@ -29,14 +32,14 @@ var cmdInfoParser = new Parser()
     .array('localViewAngles2', { length: 1, type: qAngleParser });
 
 // 0x1 & 0x02
-var defaultPacketParser = new Parser()
+const defaultPacketParser = new Parser()
     .endianess('little')
     .array('packetInfo', { length: 2, type: cmdInfoParser })
     .int32('inSequence')
     .int32('outSequence')
     .array('data', { length: 1, type: dataParser });
 
-var oldPacketParser = new Parser()
+const oldPacketParser = new Parser()
     .endianess('little')
     .array('packetInfo', { length: 1, type: cmdInfoParser })
     .int32('inSequence')
@@ -44,43 +47,37 @@ var oldPacketParser = new Parser()
     .array('data', { length: 1, type: dataParser });
 
 // 0x03
-var syncTickParser = new Parser();
+const syncTickParser = new Parser();
 
 // 0x04
-var consoleCmdParser = new Parser()
+const consoleCmdParser = new Parser()
     .endianess('little')
     .int32('size')
     .string('command', { encoding: 'utf8', length: 'size', stripNull: true });
 
 // 0x05
-var userCmdParser = new Parser()
+const userCmdParser = new Parser()
     .endianess('little')
     .int32('cmd')
     .array('data', { length: 1, type: dataParser });
 
 // 0x06
-var dataTableParser = new Parser()
-    .endianess('little')
-    .array('data', { length: 1, type: dataParser });
+const dataTableParser = new Parser().endianess('little').array('data', { length: 1, type: dataParser });
 
 // 0x07
-var stopParser = new Parser()
-    .endianess('little')
-    .array('rest', { readUntil: 'eof', type: 'int8' });
+const stopParser = new Parser().endianess('little').array('rest', { readUntil: 'eof', type: 'int8' });
 
 // 0x08
-var customDataParser = new Parser()
+const customDataParser = new Parser()
     .endianess('little')
     .int32('unk')
     .array('data', { length: 1, type: dataParser });
 
 // 0x09 (0x08)
-var stringTablesParser = new Parser()
-    .endianess('little')
-    .array('data', { length: 1, type: dataParser });
+const stringTablesParser = new Parser().endianess('little').array('data', { length: 1, type: dataParser });
 
 // Protocol 4
-var defaultMessageParser = new Parser()
+const defaultMessageParser = new Parser()
     .endianess('little')
     .bit8('type')
     .int32('tick')
@@ -96,12 +93,12 @@ var defaultMessageParser = new Parser()
             0x06: dataTableParser,
             0x07: stopParser,
             0x08: customDataParser,
-            0x09: stringTablesParser
-        }
+            0x09: stringTablesParser,
+        },
     });
 
 // Protocol 2 & 3
-var oldMessageParser = new Parser()
+const oldMessageParser = new Parser()
     .endianess('little')
     .bit8('type')
     .int32('tick')
@@ -115,11 +112,11 @@ var oldMessageParser = new Parser()
             0x05: userCmdParser,
             0x06: dataTableParser,
             0x07: stopParser,
-            0x08: stringTablesParser
-        }
+            0x08: stringTablesParser,
+        },
     });
 
-var headerParser = new Parser()
+const headerParser = new Parser()
     .endianess('little')
     .string('demoFileStamp', { encoding: 'utf8', length: 8, stripNull: true })
     .int32('demoProtocol')
@@ -179,18 +176,22 @@ class SourceDemoParser {
         return this;
     }
     parseDemoMessages(demo, buffer) {
-        this.messageParser = new Parser()
-            .endianess('little')
-            .skip(8 + 4 + 4 + 4 * 260 + 4 + 4 + 4 + 4);
+        this.messageParser = new Parser().endianess('little').skip(0x430);
 
         if (this.autoConfigure) {
             switch (demo.header.demoProtocol) {
                 case 2:
                 case 3:
-                    this.messageParser.array('messages', { readUntil: 'eof', type: oldMessageParser });
+                    this.messageParser.array('messages', {
+                        readUntil: 'eof',
+                        type: oldMessageParser,
+                    });
                     break;
                 case 4:
-                    this.messageParser.array('messages', { readUntil: 'eof', type: defaultMessageParser });
+                    this.messageParser.array('messages', {
+                        readUntil: 'eof',
+                        type: defaultMessageParser,
+                    });
                     break;
                 default:
                     throw new Error(`Invalid demo protocol: ${demo.header.demoProtocol}`);
@@ -199,11 +200,9 @@ class SourceDemoParser {
 
         // Oof
         let rest = 4 - (buffer.length % 4);
-        while (rest--) {
-            buffer = Buffer.concat([buffer], buffer.length + 1);
-        }
+        let alignedBuffer = Buffer.concat([buffer], buffer.length + rest);
 
-        demo.messages = this.messageParser.parse(buffer).messages;
+        demo.messages = this.messageParser.parse(alignedBuffer).messages;
 
         if (this.autoAdjust) {
             if (this.defaultGame != undefined) {
@@ -228,8 +227,9 @@ class SourceDemoParser {
     encodeUserCmdMessages(demo) {
         let result = [];
         for (let message of demo.messages) {
-            if (message.type == 0x05 && message.message.data[0].size > 0) {
-                let buf = new BitStream(new Buffer(message.message.data[0].data));
+            if (message.type === 0x05 && message.message.data[0].size > 0) {
+                let buf = new BitStream(Buffer.from(message.message.data[0].data));
+
                 let cmd = { source: message };
                 if (buf.readBoolean()) cmd.commandNumber = buf.readInt32();
                 if (buf.readBoolean()) cmd.tickCount = buf.readInt32();
@@ -251,6 +251,162 @@ class SourceDemoParser {
             }
         }
         return result;
+    }
+    encodeStringTables(demo, stringTableEncoder = StringTables) {
+        let stringTableFlag = demo.header.demoProtocol === 4 ? 0x09 : 0x08;
+
+        let frames = [];
+        for (let message of demo.messages) {
+            if (message.type === stringTableFlag && message.message.data[0].size > 0) {
+                let buf = new BitStream(Buffer.from(message.message.data[0].data));
+
+                let tables = buf.readInt8();
+                while (tables--) {
+                    let name = buf.readASCIIString();
+                    let entries = buf.readInt16();
+                    while (entries--) {
+                        let entry = buf.readASCIIString();
+                        if (buf.readBoolean()) {
+                            let length = buf.readInt16();
+                            let data = buf.readArrayBuffer(length);
+                            let encoder = stringTableEncoder[name];
+                            if (encoder) {
+                                let stringTable = encoder.create();
+                                stringTable.encode(data, demo);
+                                frames.push({
+                                    [name]: stringTable,
+                                });
+                            }
+                        }
+                    }
+
+                    if (buf.readBoolean()) {
+                        let entries = buf.readInt16();
+                        while (entries--) {
+                            let entry = buf.readASCIIString();
+                            if (buf.readBoolean()) {
+                                let length = buf.readInt16();
+                                let data = buf.readArrayBuffer(length);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return frames;
+    }
+    encodeDataTables(demo) {
+        let infoBitFlags = demo.header.demoProtocol === 2 ? 11 : 16;
+        let isPortal2 = demo.header.gameDirectory === 'portal2';
+
+        let frames = [];
+        for (let message of demo.messages) {
+            if (message.type === 0x06 && message.message.data[0].size > 0) {
+                let buf = new BitStream(Buffer.from(message.message.data[0].data));
+
+                let frame = {
+                    source: message,
+                    tables: [],
+                    classes: [],
+                };
+
+                while (buf.readBoolean()) {
+                    let needsDecoder = buf.readBoolean();
+                    let netTableName = buf.readASCIIString();
+                    let table = {
+                        needsDecoder,
+                        netTableName,
+                        props: [],
+                    };
+
+                    let props = buf.readBits(10, false);
+                    while (props--) {
+                        let type = buf.readBits(5, false);
+                        let varName = buf.readASCIIString();
+                        let flags = buf.readBits(infoBitFlags, false);
+                        let prop = {
+                            type,
+                            varName,
+                            flags,
+                            isExcludeProp: function() {
+                                return (this.flags & SendPropFlags.Exclude) !== 0;
+                            },
+                        };
+
+                        if (isPortal2) {
+                            prop.unk = buf.readBits(11, false);
+                        }
+
+                        if (prop.type === SendPropType.DataTable || prop.isExcludeProp()) {
+                            prop.excludeDtName = buf.readASCIIString();
+                        } else if (
+                            prop.type === SendPropType.String ||
+                            prop.type === SendPropType.Int ||
+                            prop.type === SendPropType.Float ||
+                            prop.type === SendPropType.Vector ||
+                            prop.type === SendPropType.VectorXy
+                        ) {
+                            if (isPortal2) {
+                                prop.unk2 = buf.readBits(71, false);
+                            } else {
+                                prop.lowValue = buf.readFloat32();
+                                prop.highValue = buf.readFloat32();
+                                prop.bits = buf.readBits(7, false);
+                            }
+                        } else if (prop.type === SendPropType.Array) {
+                            prop.elements = buf.readBits(10, false);
+                        } else {
+                            throw new Error('Invalid prop type: ' + prop.type);
+                        }
+
+                        table.props.push(prop);
+                    }
+
+                    frame.tables.push(table);
+                }
+
+                let classes = buf.readInt16();
+                while (classes--) {
+                    frame.classes.push({
+                        classId: buf.readInt16(),
+                        className: buf.readASCIIString(),
+                        dataTableName: buf.readASCIIString(),
+                    });
+                }
+
+                frames.push(frame);
+            }
+        }
+        return frames;
+    }
+    encodePackets(demo, netMessages = undefined) {
+        netMessages = netMessages || (demo.header.demoProtocol === 4 ? NetMessages.Portal2Engine : NetMessages.HalfLife2Engine);
+
+        let frames = [];
+        for (let message of demo.messages) {
+            if ((message.type === 0x01 || message.type === 0x02) && message.message.data[0].size > 0) {
+                let packets = [];
+                let buf = new BitStream(Buffer.from(message.message.data[0].data));
+
+                while (buf.bitsLeft > 6) {
+                    let type = buf.readBits(6);
+
+                    let message = netMessages[type];
+                    if (message) {
+                        message = netMessage.create();
+                        message.encode(buf, demo);
+                        //console.log(message);
+                    } else {
+                        throw new Error('Unknown type: ' + type);
+                    }
+
+                    packets.push({ type, message });
+                }
+
+                frames.push({ source: message, packets });
+            }
+        }
+        return frames;
     }
 }
 

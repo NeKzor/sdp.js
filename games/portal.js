@@ -1,4 +1,4 @@
-var Portal = {
+const Portal = {
     directory: 'portal',
     tickrate: 1 / 0.015,
     rules: [
@@ -9,12 +9,10 @@ var Portal = {
             callback: (pos, _) => {
                 if (pos != undefined) {
                     let startPos = { x: -544, y: -368.75, z: 160 };
-                    return pos.current.x == startPos.x
-                        && pos.current.y == startPos.y
-                        && pos.current.z == startPos.z;
+                    return pos.current.x === startPos.x && pos.current.y === startPos.y && pos.current.z === startPos.z;
                 }
                 return false;
-            }
+            },
         },
         {
             map: 'escape_02',
@@ -25,9 +23,9 @@ var Portal = {
                     return cmds.current.includes('startneurotoxins 99999');
                 }
                 return false;
-            }
-        }
-    ]
+            },
+        },
+    ],
 };
 
 module.exports = Portal;

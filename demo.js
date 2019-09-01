@@ -5,14 +5,14 @@ class SourceDemo {
         this.game = undefined;
     }
     detectGame(sourceGame) {
-        this.game = sourceGame.gameList.find(game => game.directory == this.header.gameDirectory);
+        this.game = sourceGame.gameList.find((game) => game.directory === this.header.gameDirectory);
         if (this.game != undefined) {
             this.game.source = sourceGame;
         }
         return this;
     }
     intervalPerTick() {
-        if (this.header.playbackTicks == 0) {
+        if (this.header.playbackTicks === 0) {
             if (this.game != undefined) {
                 return 1 / this.game.tickrate;
             }
@@ -21,7 +21,7 @@ class SourceDemo {
         return this.header.playbackTime / this.header.playbackTicks;
     }
     tickrate() {
-        if (this.header.playbackTime == 0) {
+        if (this.header.playbackTime === 0) {
             if (this.game != undefined) {
                 return this.game.tickrate;
             }
@@ -30,14 +30,14 @@ class SourceDemo {
         return this.header.playbackTicks / this.header.playbackTime;
     }
     adjustTicks() {
-        if (this.messages.length == 0) {
+        if (this.messages.length === 0) {
             throw new Error('Cannot adjust ticks without parsed messages.');
         }
 
         let synced = false;
         let last = 0;
         for (let message of this.messages) {
-            if (message.type == 0x03) {
+            if (message.type === 0x03) {
                 synced = true;
             }
 
@@ -52,7 +52,7 @@ class SourceDemo {
         return this;
     }
     adjustRange(endTick = 0, startTick = 0) {
-        if (this.messages.length == 0) {
+        if (this.messages.length === 0) {
             throw new Error('Cannot adjust range without parsed messages.');
         }
 
@@ -74,9 +74,7 @@ class SourceDemo {
     adjust(splitScreenIndex = 0) {
         this.adjustTicks();
         this.adjustRange();
-        return (this.game != undefined)
-            ? this.game.source.adjustByRules(this, splitScreenIndex)
-            : this;
+        return this.game != undefined ? this.game.source.adjustByRules(this, splitScreenIndex) : this;
     }
 }
 
