@@ -1,9 +1,9 @@
 // prettier-ignore
 const SourceGames = [
-    require('./games/portal.js'),
-    require('./games/portal2.js'),
-    require('./games/mel.js'),
-    require('./games/tag.js')
+    require('./games/portal'),
+    require('./games/portal2'),
+    require('./games/mel'),
+    require('./games/tag')
 ];
 
 class SourceGame {

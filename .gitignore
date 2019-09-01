@@ -2,6 +2,7 @@
 demos/private/
 js/
 node_modules/
+*.str
 
 package-lock.json
 *.html

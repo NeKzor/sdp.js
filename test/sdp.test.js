@@ -1,4 +1,4 @@
-const { SourceDemo, SourceGame, SourceDemoParser } = require('../sdp.js');
+const { SourceDemo, SourceGame, SourceDemoParser } = require('../sdp');
 const assert = require('assert');
 const fs = require('fs');
 

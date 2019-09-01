@@ -1,6 +1,6 @@
 const { Parser } = require('binary-parser');
 const { BitStream } = require('bit-buffer');
-const { SourceDemo } = require('./demo.js');
+const { SourceDemo } = require('./demo');
 const { SendPropFlags, SendPropType } = require('./extensions/DataTables');
 const StringTables = require('./extensions/StringTables');
 const NetMessages = require('./extensions/NetMessages');
@@ -227,10 +227,13 @@ class SourceDemoParser {
     encodeUserCmdMessages(demo) {
         let result = [];
         for (let message of demo.messages) {
-            if (message.type === 0x05 && message.message.data[0].size > 0) {
-                let buf = new BitStream(Buffer.from(message.message.data[0].data));
+            if (message.type == 0x05 && message.message.data[0].size > 0) {
+                let temp = Buffer.from(message.message.data[0].data);
+                let buf = new BitStream(temp);
+                buf._view._view = new Uint8Array(temp);
 
                 let cmd = { source: message };
+
                 if (buf.readBoolean()) cmd.commandNumber = buf.readInt32();
                 if (buf.readBoolean()) cmd.tickCount = buf.readInt32();
                 if (buf.readBoolean()) cmd.viewAngleX = buf.readFloat32();
