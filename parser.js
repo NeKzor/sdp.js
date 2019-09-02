@@ -388,15 +388,17 @@ class SourceDemoParser {
         let frames = [];
         for (let message of demo.messages) {
             if ((message.type === 0x01 || message.type === 0x02) && message.message.data[0].size > 0) {
+                //console.log('-------- DEMO MESSAGE TICK ' + message.tick + ' --------');
                 let packets = [];
                 let buf = new BitStream(Buffer.from(message.message.data[0].data));
 
                 while (buf.bitsLeft > 6) {
                     let type = buf.readBits(6);
-
+                    
                     let message = netMessages[type];
                     if (message) {
-                        message = netMessage.create();
+                        message = message.create();
+                        //console.log(message.name());
                         message.encode(buf, demo);
                         //console.log(message);
                     } else {

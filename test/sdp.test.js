@@ -166,14 +166,43 @@ describe('encodeDataTables', () => {
         });
     });
 });
-/* describe('encodePackets', function() {
+describe('encodePackets', function() {
     describe('#Portal 2', () => {
         it('encode packets correctly', () => {
             let buffer = fs.readFileSync('./demos/public/portal2.dem');
             let parser = SourceDemoParser.default();
-            let demo = parser.parseDemo(buffer);
+            let demo = new SourceDemo();
+
+            parser.parseDemoHeader(demo, buffer);
+            //console.log(demo.header);
+
+            parser.parseDemoMessages(demo, buffer);
 
             let packets = parser.encodePackets(demo);
+            assert.equal(packets.length, 10408);
+        });
+    });
+});
+/* describe('encodePackets', function() {
+    this.timeout(0);
+
+    describe('#Portal 2', () => {
+        it('encode packets correctly', () => {
+            let num = 2;
+            do {
+                let buffer = fs.readFileSync('./demos/private/spliced/ahah_' + num + '.dem');
+                let parser = SourceDemoParser.default();
+                let demo = new SourceDemo();
+
+                parser.parseDemoHeader(demo, buffer);
+                //console.log(demo.header);
+
+                parser.parseDemoMessages(demo, buffer);
+
+                let packets = parser.encodePackets(demo);
+                console.log(packets[0].packets[0].message);
+                //console.log(num, packets.length);
+            } while (num++ < 46);
         });
     });
 }); */
