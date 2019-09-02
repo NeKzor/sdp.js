@@ -182,15 +182,34 @@ describe('readPackets', function() {
             assert.equal(packets.length, 10408);
         });
     });
+    describe('#Portal', () => {
+        it('read packets correctly', () => {
+            let buffer = fs.readFileSync('./demos/public/portal.dem');
+            let parser = SourceDemoParser.default();
+            let demo = new SourceDemo();
+
+            parser.parseDemoHeader(demo, buffer);
+            //console.log(demo.header);
+
+            parser.parseDemoMessages(demo, buffer);
+
+            let packets = parser.readPackets(demo);
+            assert.equal(packets.length, 256);
+        });
+    });
 });
 /* describe('readPackets', function() {
     this.timeout(0);
 
     describe('#Portal 2', () => {
         it('read packets correctly', () => {
-            let num = 2;
-            do {
-                let buffer = fs.readFileSync('./demos/private/spliced/ahah_' + num + '.dem');
+            const dir = './demos/private/unpack/';
+            const files = fs.readdirSync(dir);
+
+            for (let file of files) {
+                if (!file.endsWith('.dem')) continue;
+
+                let buffer = fs.readFileSync(dir + file);
                 let parser = SourceDemoParser.default();
                 let demo = new SourceDemo();
 
@@ -200,9 +219,9 @@ describe('readPackets', function() {
                 parser.parseDemoMessages(demo, buffer);
 
                 let packets = parser.readPackets(demo);
-                console.log(packets[0].packets[0].message);
-                //console.log(num, packets.length);
-            } while (num++ < 46);
+                console.log(packets[0].packets[0]);
+                console.log(file, packets.length);
+            }
         });
     });
 }); */

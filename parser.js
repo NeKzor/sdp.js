@@ -427,7 +427,7 @@ class SourceDemoParser {
                         //console.log(message.name);
                         message.read(buf, demo);
                         //console.log(message);
-                        packets.push({ type, message });
+                        packets.push(message);
                     } else {
                         throw new Error(`Net message type ${type} unknown!`);
                     }

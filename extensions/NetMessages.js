@@ -1,10 +1,15 @@
 class NetMessage {
-    static create(type) {
-        return new this(type);
-    }
     constructor(type) {
-        this.type = type;
-        this.name = this.constructor.name;
+        Object.defineProperty(this, '_type', {
+            enumerable: false,
+            value: type,
+        });
+    }
+    get type() {
+        return this._type;
+    }
+    get name() {
+        return this.constructor.name;
     }
     read() {
         throw new Error(`read() for ${this.name} not implemented!`);
@@ -36,9 +41,10 @@ class NetSplitScreenUser extends NetMessage {
 }
 class NetTick extends NetMessage {
     read(buf) {
+        const NET_TICK_SCALEUP = 100000;
         this.tick = buf.readInt32();
-        this.hostFrameTime = buf.readInt16();
-        this.hostFrameTimeStdDeviation = buf.readInt16();
+        this.hostFrameTime = buf.readInt16() / NET_TICK_SCALEUP;
+        this.hostFrameTimeStdDeviation = buf.readInt16() / NET_TICK_SCALEUP;
     }
 }
 class NetStringCmd extends NetMessage {
@@ -77,19 +83,19 @@ class NetSignonState extends NetMessage {
 }
 class SvcServerInfo extends NetMessage {
     read(buf, demo) {
-        let newEngine = demo.header.demoProtocol === 4;
-
         this.protocol = buf.readInt16();
         this.serverCount = buf.readInt32();
         this.isHltv = buf.readBoolean();
         this.isDedicated = buf.readBoolean();
         this.clientCrc = buf.readInt32();
         this.maxClasses = buf.readUint16();
-        this.mapCrc = newEngine ? buf.readInt32() : buf.readBits(128);
+        this.mapCrc = buf.readInt32();
         this.playerSlot = buf.readInt8();
         this.maxClients = buf.readInt8();
-        if (newEngine) {
+        if (demo.header.demoProtocol === 4) {
             this.unk = buf.readInt32();
+        } else if (demo.header.networkProtocol === 24) {
+            this.unk = buf.readBits(96);
         }
         this.tickInterval = buf.readFloat32();
         this.operatingSystem = String.fromCharCode(buf.readInt8());
@@ -99,7 +105,13 @@ class SvcServerInfo extends NetMessage {
         this.hostName = buf.readASCIIString();
     }
 }
-class SvcSendTable extends NetMessage {}
+class SvcSendTable extends NetMessage {
+    read(buf) {
+        this.needsDecoder = buf.readBoolean();
+        this.length = buf.readInt16();
+        this.data = buf.readBits(this.data);
+    }
+}
 class SvcClassInfo extends NetMessage {
     read(buf) {
         this.length = buf.readInt16();
@@ -122,7 +134,7 @@ class SvcSetPause extends NetMessage {
     }
 }
 class SvcCreateStringTable extends NetMessage {
-    read(buf) {
+    read(buf, demo) {
         this.tableName = buf.readASCIIString();
         this.maxEntries = buf.readInt16();
         this.entries = buf.readBits(Math.log2(this.maxEntries) + 1);
@@ -130,7 +142,7 @@ class SvcCreateStringTable extends NetMessage {
         this.userDataFixedSize = buf.readBoolean();
         this.userDataSize = this.userDataFixedSize ? buf.readBits(12) : 0;
         this.userDataSizeBits = this.userDataFixedSize ? buf.readBits(4) : 0;
-        this.unk = buf.readBits(2);
+        this.unk = buf.readBits(demo.header.demoProtocol === 4 ? 2 : 1);
         this.data = buf.readBits(this.length);
     }
 }
@@ -233,9 +245,9 @@ class SvcSplitScreen extends NetMessage {
     }
 }
 class SvcUserMessage extends NetMessage {
-    read(buf) {
-        this.type = buf.readBits(8);
-        this.length = buf.readBits(12);
+    read(buf, demo) {
+        this.umType = buf.readBits(8);
+        this.length = buf.readBits(demo.header.demoProtocol === 4 ? 12 : 11);
         this.data = buf.readBits(this.length);
     }
 }
