@@ -423,15 +423,14 @@ class SourceDemoParser {
 
                     const NetMessage = netMessages[type];
                     if (NetMessage) {
-                        let msg = new NetMessage(type);
-                        //console.log(msg.name);
-                        msg.read(buf, demo);
-                        //console.log(msg);
+                        let message = new NetMessage(type);
+                        //console.log(message.name);
+                        message.read(buf, demo);
+                        //console.log(message);
+                        packets.push({ type, message });
                     } else {
                         throw new Error(`Net message type ${type} unknown!`);
                     }
-
-                    packets.push({ type, message });
                 }
 
                 frames.push({ source: message, packets });
