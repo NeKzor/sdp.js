@@ -68,15 +68,15 @@ describe('SourceDemo', () => {
         });
     });
 });
-describe('encodeUserCmdMessages', () => {
+describe('readUserCmdMessages', () => {
     describe('#Portal 2', () => {
-        it('encode CUserCmd correctly', () => {
+        it('read CUserCmd correctly', () => {
             let buffer = fs.readFileSync('./demos/public/portal2.dem');
 
             let parser = SourceDemoParser.default().withAutoAdjustment(true);
 
             let demo = parser.parseDemo(buffer);
-            let message = parser.encodeUserCmdMessages(demo)[0];
+            let message = parser.readUserCmdMessages(demo)[0];
 
             assert.equal(message.commandNumber, 3299);
             assert.equal(message.tickCount, 100);
@@ -95,13 +95,13 @@ describe('encodeUserCmdMessages', () => {
         });
     });
     describe('#Portal', () => {
-        it('encode CUserCmd correctly', () => {
+        it('read CUserCmd correctly', () => {
             let buffer = fs.readFileSync('./demos/public/portal.dem');
 
             let parser = SourceDemoParser.default().withAutoAdjustment(true);
 
             let demo = parser.parseDemo(buffer);
-            let message = parser.encodeUserCmdMessages(demo)[0];
+            let message = parser.readUserCmdMessages(demo)[0];
 
             assert.equal(message.commandNumber, 16);
             assert.equal(message.tickCount, 4262);
@@ -120,55 +120,55 @@ describe('encodeUserCmdMessages', () => {
         });
     });
 });
-describe('encodeStringTables', () => {
+describe('readStringTables', () => {
     describe('#Portal 2', () => {
-        it('encode string tables correctly', () => {
+        it('read string tables correctly', () => {
             let buffer = fs.readFileSync('./demos/public/portal2.dem');
             let parser = SourceDemoParser.default();
             let demo = parser.parseDemo(buffer);
 
-            let st = parser.encodeStringTables(demo);
+            let st = parser.readStringTables(demo);
             assert.equal(st.length, 1);
         });
     });
     describe('#Portal', () => {
-        it('encode string tables correctly', () => {
+        it('read string tables correctly', () => {
             let buffer = fs.readFileSync('./demos/public/portal.dem');
             let parser = SourceDemoParser.default();
             let demo = parser.parseDemo(buffer);
 
-            let st = parser.encodeStringTables(demo);
+            let st = parser.readStringTables(demo);
             assert.equal(st.length, 1);
         });
     });
 });
-describe('encodeDataTables', () => {
+describe('readDataTables', () => {
     describe('#Portal 2', () => {
-        it('encode data tables correctly', () => {
+        it('read data tables correctly', () => {
             let buffer = fs.readFileSync('./demos/public/portal2.dem');
             let parser = SourceDemoParser.default();
             let demo = parser.parseDemo(buffer);
 
-            let dt = parser.encodeDataTables(demo)[0];
+            let dt = parser.readDataTables(demo)[0];
             assert.equal(dt.tables.length, 307);
             assert.equal(dt.classes.length, 236);
         });
     });
     describe('#Portal', () => {
-        it('encode data tables correctly', () => {
+        it('read data tables correctly', () => {
             let buffer = fs.readFileSync('./demos/public/portal.dem');
             let parser = SourceDemoParser.default();
             let demo = parser.parseDemo(buffer);
 
-            let dt = parser.encodeDataTables(demo)[0];
+            let dt = parser.readDataTables(demo)[0];
             assert.equal(dt.tables.length, 269);
             assert.equal(dt.classes.length, 222);
         });
     });
 });
-describe('encodePackets', function() {
+describe('readPackets', function() {
     describe('#Portal 2', () => {
-        it('encode packets correctly', () => {
+        it('read packets correctly', () => {
             let buffer = fs.readFileSync('./demos/public/portal2.dem');
             let parser = SourceDemoParser.default();
             let demo = new SourceDemo();
@@ -178,16 +178,16 @@ describe('encodePackets', function() {
 
             parser.parseDemoMessages(demo, buffer);
 
-            let packets = parser.encodePackets(demo);
+            let packets = parser.readPackets(demo);
             assert.equal(packets.length, 10408);
         });
     });
 });
-/* describe('encodePackets', function() {
+/* describe('readPackets', function() {
     this.timeout(0);
 
     describe('#Portal 2', () => {
-        it('encode packets correctly', () => {
+        it('read packets correctly', () => {
             let num = 2;
             do {
                 let buffer = fs.readFileSync('./demos/private/spliced/ahah_' + num + '.dem');
@@ -199,7 +199,7 @@ describe('encodePackets', function() {
 
                 parser.parseDemoMessages(demo, buffer);
 
-                let packets = parser.encodePackets(demo);
+                let packets = parser.readPackets(demo);
                 console.log(packets[0].packets[0].message);
                 //console.log(num, packets.length);
             } while (num++ < 46);

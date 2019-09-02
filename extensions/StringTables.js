@@ -9,7 +9,7 @@ class PlayerInfo {
     static create() {
         return new PlayerInfo();
     }
-    encode(data, demo) {
+    read(data, demo) {
         let buf = new BitStream(Buffer.from(data));
 
         if (demo.header.demoProtocol === 4) {

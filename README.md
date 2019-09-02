@@ -5,7 +5,7 @@
 - ~~learn basic js~~
 - ~~parse protocol 2-4~~
 - ~~speedrun rules~~
-- packet encoding
+- ~~net message reader (Portal 2)~~
 
 ## Example
 

@@ -41,7 +41,7 @@ class SourceAutoRecord {
         let parser = new SourceDemoParser();
 
         for (let demo of demos) {
-            let messages = parser.encodeUserCmdMessages(demo);
+            let messages = parser.readUserCmdMessages(demo);
             for (let message of messages) {
                 bb.writeInt32(message.buttons || 0);
                 bb.writeFloat(message.forwardMove || 0);

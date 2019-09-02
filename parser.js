@@ -224,7 +224,7 @@ class SourceDemoParser {
 
         return demo;
     }
-    encodeUserCmdMessages(demo) {
+    readUserCmdMessages(demo) {
         let result = [];
         for (let message of demo.messages) {
             if (message.type == 0x05 && message.message.data[0].size > 0) {
@@ -255,7 +255,7 @@ class SourceDemoParser {
         }
         return result;
     }
-    encodeStringTables(demo, stringTableEncoder = StringTables) {
+    readStringTables(demo, stringTableReader = StringTables) {
         let stringTableFlag = demo.header.demoProtocol === 4 ? 0x09 : 0x08;
 
         let frames = [];
@@ -272,10 +272,10 @@ class SourceDemoParser {
                         if (buf.readBoolean()) {
                             let length = buf.readInt16();
                             let data = buf.readArrayBuffer(length);
-                            let encoder = stringTableEncoder[name];
-                            if (encoder) {
-                                let stringTable = encoder.create();
-                                stringTable.encode(data, demo);
+                            let reader = stringTableReader[name];
+                            if (reader) {
+                                let stringTable = reader.create();
+                                stringTable.read(data, demo);
                                 frames.push({
                                     [name]: stringTable,
                                 });
@@ -298,7 +298,7 @@ class SourceDemoParser {
         }
         return frames;
     }
-    encodeDataTables(demo) {
+    readDataTables(demo) {
         let infoBitFlags = demo.header.demoProtocol === 2 ? 11 : 16;
         let isPortal2 = demo.header.gameDirectory === 'portal2';
 
@@ -382,7 +382,7 @@ class SourceDemoParser {
         }
         return frames;
     }
-    encodePackets(demo, netMessages = undefined) {
+    readPackets(demo, netMessages = undefined) {
         netMessages = netMessages || (demo.header.demoProtocol === 4 ? NetMessages.Portal2Engine : NetMessages.HalfLife2Engine);
 
         let frames = [];
@@ -399,7 +399,7 @@ class SourceDemoParser {
                     if (message) {
                         message = message.create();
                         //console.log(message.name());
-                        message.encode(buf, demo);
+                        message.read(buf, demo);
                         //console.log(message);
                     } else {
                         throw new Error('Unknown type: ' + type);
