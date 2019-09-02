@@ -1,12 +1,16 @@
 class NetMessage {
-    static create() {
-        return new this();
+    static create(type) {
+        return new this(type);
     }
-    name() {
-        return this.constructor.name;
+    constructor(type) {
+        this.type = type;
+        this.name = this.constructor.name;
     }
     read() {
-        throw new Error(`read for ${this.name()} not implemented!`);
+        throw new Error(`read() for ${this.name} not implemented!`);
+    }
+    write() {
+        throw new Error(`write() for ${this.name} not implemented!`);
     }
 }
 
@@ -85,8 +89,7 @@ class SvcServerInfo extends NetMessage {
         this.playerSlot = buf.readInt8();
         this.maxClients = buf.readInt8();
         if (newEngine) {
-            this.unk1 = buf.readInt16();
-            this.unk2 = buf.readInt16();
+            this.unk = buf.readInt32();
         }
         this.tickInterval = buf.readFloat32();
         this.operatingSystem = String.fromCharCode(buf.readInt8());

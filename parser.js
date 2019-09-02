@@ -81,7 +81,7 @@ const defaultMessageParser = new Parser()
     .endianess('little')
     .bit8('type')
     .int32('tick')
-    .bit8('alignment')
+    .bit8('slot')
     .choice('message', {
         tag: 'type',
         choices: {
@@ -263,37 +263,63 @@ class SourceDemoParser {
             if (message.type === stringTableFlag && message.message.data[0].size > 0) {
                 let buf = new BitStream(Buffer.from(message.message.data[0].data));
 
+                let frame = {
+                    tables: [],
+                };
+
                 let tables = buf.readInt8();
                 while (tables--) {
-                    let name = buf.readASCIIString();
+                    let table = {
+                        entries: [],
+                    };
+
+                    let tableName = buf.readASCIIString();
                     let entries = buf.readInt16();
+
                     while (entries--) {
-                        let entry = buf.readASCIIString();
+                        let entry = {
+                            name: buf.readASCIIString(),
+                        };
+
                         if (buf.readBoolean()) {
                             let length = buf.readInt16();
                             let data = buf.readArrayBuffer(length);
-                            let reader = stringTableReader[name];
+                            let reader = stringTableReader[tableName];
                             if (reader) {
                                 let stringTable = reader.create();
                                 stringTable.read(data, demo);
-                                frames.push({
-                                    [name]: stringTable,
-                                });
+                                data = stringTable;
                             }
+                            entry.data = data;
                         }
+
+                        table.entries.push(entry);
                     }
 
                     if (buf.readBoolean()) {
+                        let cclass = {
+                            entries: [],
+                        };
+
                         let entries = buf.readInt16();
                         while (entries--) {
-                            let entry = buf.readASCIIString();
+                            let entry = {
+                                name: buf.readASCIIString(),
+                            };
+
                             if (buf.readBoolean()) {
                                 let length = buf.readInt16();
-                                let data = buf.readArrayBuffer(length);
+                                entry.data = buf.readArrayBuffer(length);
                             }
+
+                            table.class = cclass;
                         }
                     }
+
+                    frame.tables.push(table);
                 }
+
+                frames.push(frame);
             }
         }
         return frames;
@@ -394,15 +420,15 @@ class SourceDemoParser {
 
                 while (buf.bitsLeft > 6) {
                     let type = buf.readBits(6);
-                    
-                    let message = netMessages[type];
-                    if (message) {
-                        message = message.create();
-                        //console.log(message.name());
-                        message.read(buf, demo);
-                        //console.log(message);
+
+                    const NetMessage = netMessages[type];
+                    if (NetMessage) {
+                        let msg = new NetMessage(type);
+                        //console.log(msg.name);
+                        msg.read(buf, demo);
+                        //console.log(msg);
                     } else {
-                        throw new Error('Unknown type: ' + type);
+                        throw new Error(`Net message type ${type} unknown!`);
                     }
 
                     packets.push({ type, message });
