@@ -14,7 +14,7 @@
         "url": "https://github.com/NeKzor/sdp.js.git"
     },
     "scripts": {
-        "build": "browserify -r buffer -r ./src/sdp.js:sdp > dist/sdp.js",
+        "build": "browserify -r buffer -r ./src/sdp.js:sdp -o dist/sdp.js",
         "test": "mocha"
     },
     "main": "sdp.js",
