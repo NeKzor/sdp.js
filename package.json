@@ -1,6 +1,6 @@
 {
     "name": "sdp.js",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "Simple Source Engine demo parser for Node.js.",
     "keywords": [
         "demo-parser",
@@ -14,7 +14,7 @@
         "url": "https://github.com/NeKzor/sdp.js.git"
     },
     "scripts": {
-        "browser": "browserify browser.js -o js/browser.sdp.js -t brfs",
+        "build": "browserify -r buffer -r ./src/sdp.js:sdp > dist/sdp.js",
         "test": "mocha"
     },
     "main": "sdp.js",

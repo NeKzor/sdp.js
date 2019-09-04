@@ -1,6 +1,6 @@
 .vscode/
 demos/private/
-js/
+dist/
 *.str
 *.html
 
