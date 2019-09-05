@@ -7,6 +7,9 @@ const NetMessages = require('./types/NetMessages');
 const SoundInfo = require('./types/SoundInfo');
 const StringTables = require('./types/StringTables');
 const { UserCmd } = require('./types/UserCmd');
+const SourceGames = require('./speedrun/games');
+const { SarTimer, SarReplay } = require('./speedrun/sar');
+const { SourceTimer, TimingResult } = require('./speedrun/timer');
 
 module.exports = {
     SourceDemo,
@@ -18,4 +21,11 @@ module.exports = {
     UserCmd,
     GameEventManager,
     SoundInfo,
+    Speedrun: {
+        SourceTimer,
+        SourceGames,
+        TimingResult,
+        SarTimer,
+        SarReplay,
+    },
 };

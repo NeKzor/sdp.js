@@ -6,7 +6,7 @@ const PortalStoriesMel = {
             map: ['sp_a1_tramride', 'st_a1_tramride'],
             offset: 0,
             type: 'start',
-            callback: (pos, _) => {
+            match: ({ pos }) => {
                 if (pos != undefined) {
                     let startPos = { x: -4592.0, y: -4475.4052734375, z: 108.683975219727 };
                     return (
@@ -25,7 +25,7 @@ const PortalStoriesMel = {
             map: ['sp_a4_finale', 'st_a4_finale'],
             offset: 0,
             type: 'end',
-            callback: (_, cmds) => {
+            match: ({ cmds }) => {
                 if (cmds != undefined) {
                     let outro = 'playvideo_exitcommand_nointerrupt aegis_interior.bik end_movie movie_aegis_interior';
                     return cmds.current.includes(outro);

@@ -3,6 +3,7 @@ const { SendTable, ServerClassInfo } = require('./types/DataTables');
 const NetMessages = require('./types/NetMessages');
 const { StringTable } = require('./types/StringTables');
 const { UserCmd } = require('./types/UserCmd');
+const SourceGames = require('./speedrun/games');
 
 class SourceDemo {
     static default() {
@@ -33,6 +34,8 @@ class SourceDemo {
         this.playbackFrames = buf.readInt32();
         this.signOnLength = buf.readInt32();
         this.messages = [];
+
+        this.readHea;
 
         return this;
     }
@@ -107,7 +110,6 @@ class SourceDemo {
                     dataTable.serverClasses.push(sc);
                 }
 
-                
                 message.dataTable = dataTable;
             }
         }
@@ -119,7 +121,6 @@ class SourceDemo {
 
         for (let message of this.messages) {
             if (message.isType('Packet')) {
-                //console.log('-------- DEMO MESSAGE TICK ' + message.tick + ' --------');
                 let packets = [];
                 while (message.data.bitsLeft > 6) {
                     let type = message.data.readBits(6);
@@ -127,9 +128,7 @@ class SourceDemo {
                     const NetMessage = netMessages[type];
                     if (NetMessage) {
                         let packet = new NetMessage(type);
-                        //console.log(packet.getName());
                         packet.read(message.data, this);
-                        //console.log({ ...packet });
                         packets.push(packet);
                     } else {
                         throw new Error(`Net message type ${type} unknown!`);
@@ -140,25 +139,22 @@ class SourceDemo {
             }
         }
     }
-    detectGame(sourceGame) {
-        this.game = sourceGame.gameList.find((game) => game.directory === this.gameDirectory);
-        if (this.game != undefined) {
-            this.game.source = sourceGame;
-        }
+    detectGame(sourceGames = SourceGames) {
+        this.game = sourceGames.find((game) => game.directory === this.gameDirectory);
         return this;
     }
-    intervalPerTick() {
+    getIntervalPerTick() {
         if (this.playbackTicks === 0) {
-            if (this.game != undefined) {
+            if (this.game !== undefined) {
                 return 1 / this.game.tickrate;
             }
             throw new Error('Cannot find ipt of null tick demo.');
         }
         return this.playbackTime / this.playbackTicks;
     }
-    tickrate() {
+    getTickrate() {
         if (this.playbackTime === 0) {
-            if (this.game != undefined) {
+            if (this.game !== undefined) {
                 return this.game.tickrate;
             }
             throw new Error('Cannot find tickrate of null tick demo.');
@@ -201,16 +197,71 @@ class SourceDemo {
             throw new Error('Start tick is greater than end tick.');
         }
 
-        let ipt = this.intervalPerTick();
+        let ipt = this.getIntervalPerTick();
         this.playbackTicks = delta;
         this.playbackTime = ipt * delta;
 
         return this;
     }
-    adjust(splitScreenIndex = 0) {
-        this.adjustTicks();
-        this.adjustRange();
-        return this.game != undefined ? this.game.source.adjustByRules(this, splitScreenIndex) : this;
+    rebaseFrom(tick) {
+        if (this.messages.length === 0) {
+            throw new Error('Cannot adjust ticks without parsed messages.');
+        }
+
+        let synced = false;
+        let last = 0;
+        for (let message of this.messages) {
+            if (message.tick === tick) {
+                synced = true;
+            }
+
+            if (!synced) {
+                message.tick = 0;
+            } else if (message.tick < 0) {
+                message.tick = last;
+            } else {
+                message.tick -= tick;
+            }
+
+            last = message.tick;
+        }
+
+        return this;
+    }
+    getSyncedTicks(viewTolerance = 1, splitScreenIndex = 0) {
+        if (this.messages.length === 0 || demo.messages.length === 0) {
+            throw new Error('Cannot adjust ticks without parsed messages.');
+        }
+
+        let syncedTicks = [];
+        for (let message of this.messages) {
+            if (message.isType('Packet')) {
+                let view = message.cmdInfo[splitScreenIndex].viewOrigin;
+                let result = demo.messages.find((msg) => {
+                    if (!msg.isType('Packet')) {
+                        return false;
+                    }
+                    let match = msg.cmdInfo[splitScreenIndex].viewOrigin;
+                    return (
+                        Math.abs(match.x - view.x) <= viewTolerance &&
+                        Math.abs(match.y - view.y) <= viewTolerance &&
+                        Math.abs(match.z - view.z) <= viewTolerance
+                    );
+                });
+                if (result !== undefined) {
+                    syncedTicks.push({
+                        source: message.tick,
+                        destination: result.tick,
+                        delta: Math.abs(message.tick - result.tick),
+                        x: message.cmdInfo[splitScreenIndex].viewOrigin.x,
+                        y: message.cmdInfo[splitScreenIndex].viewOrigin.y,
+                        z: message.cmdInfo[splitScreenIndex].viewOrigin.z,
+                    });
+                }
+            }
+        }
+
+        return syncedTicks;
     }
 }
 
