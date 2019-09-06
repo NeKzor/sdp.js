@@ -1,4 +1,7 @@
-const { SourceDemoParser } = require('../src/sdp');
+const {
+    SourceDemoParser,
+    Speedrun: { SourceTimer },
+} = require('../src/sdp');
 const assert = require('assert');
 const fs = require('fs');
 
@@ -42,28 +45,29 @@ describe('SourceDemoParser', () => {
         });
     });
 });
-/*
 describe('SourceDemo', () => {
     describe('#Portal 2', () => {
-        it('adjust demo correctly', () => {
+        it('time speedrun correctly', () => {
             let buffer = fs.readFileSync('./demos/public/portal2.dem');
-            
+
             let demo = SourceDemoParser.default()
-            .withAutoAdjustment(true)
-            .parseDemo(buffer);
-            
+                .parse(buffer)
+                .adjustTicks()
+                .adjustRange()
+                .detectGame();
+
             assert.equal(demo.playbackTime, 346.93334987640384);
             assert.equal(demo.playbackTicks, 20816);
-            
-            demo.detectGame(new SourceGame());
-            demo.adjust();
-            
+
+            let result = SourceTimer.default().time(demo);
+
             assert.equal(demo.playbackTime, 334.6833492922783);
             assert.equal(demo.playbackTicks, 20081);
+
+            assert.equal(result.delta, 735);
         });
     });
 });
-*/
 describe('readUserCmds', () => {
     describe('#Portal 2', () => {
         it('read CUserCmd correctly', () => {
