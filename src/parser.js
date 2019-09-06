@@ -14,8 +14,8 @@ class SourceDemoParser {
     constructor(options = DefaultParsingOptions) {
         this.options = options;
     }
-    static default(options = DefaultParsingOptions) {
-        return new this(options);
+    static default() {
+        return new this(DefaultParsingOptions);
     }
     with(option) {
         this.options[option] = true;

@@ -1,4 +1,5 @@
 const { SoundInfo } = require('./SoundInfo');
+const { GameEventManager } = require('./GameEventManager');
 
 class NetMessage {
     constructor(type) {
@@ -110,8 +111,8 @@ class SvcServerInfo extends NetMessage {
 class SvcSendTable extends NetMessage {
     read(buf) {
         this.needsDecoder = buf.readBoolean();
-        this.length = buf.readInt16();
-        this.props = buf.readBits(this.length);
+        let length = buf.readInt16();
+        this.props = buf.readBits(length);
     }
 }
 class SvcClassInfo extends NetMessage {
@@ -122,7 +123,7 @@ class SvcClassInfo extends NetMessage {
             this.serverClasses = [];
             while (length--) {
                 this.serverClasses.push({
-                    classId: buf.readBits(Math.log2(this.length) + 1),
+                    classId: buf.readBits(Math.log2(length) + 1),
                     className: buf.readASCIIString(),
                     dataTableName: buf.readASCIIString(),
                 });
@@ -140,20 +141,20 @@ class SvcCreateStringTable extends NetMessage {
         this.name = buf.readASCIIString();
         this.maxEntries = buf.readInt16();
         this.numEntries = buf.readBits(Math.log2(this.maxEntries) + 1);
-        this.length = buf.readBits(20);
+        let length = buf.readBits(20);
         this.userDataFixedSize = buf.readBoolean();
         this.userDataSize = this.userDataFixedSize ? buf.readBits(12) : 0;
         this.userDataSizeBits = this.userDataFixedSize ? buf.readBits(4) : 0;
         this.flags = buf.readBits(demo.isNewEngine() ? 2 : 1);
-        this.stringData = buf.readBits(this.length);
+        this.stringData = buf.readBits(length);
     }
 }
 class SvcUpdateStringTable extends NetMessage {
     read(buf) {
         this.tableId = buf.readBits(5);
         this.numChangedEntries = buf.readBoolean() ? buf.readInt16() : 1;
-        this.length = buf.readBits(20);
-        this.stringData = buf.readBits(this.length);
+        let length = buf.readBits(20);
+        this.stringData = buf.readBits(length);
     }
 }
 class SvcVoiceInit extends NetMessage {
@@ -167,8 +168,8 @@ class SvcVoiceData extends NetMessage {
     read(buf) {
         this.client = buf.readInt8();
         this.proximity = buf.readInt8();
-        this.length = buf.readInt16();
-        this.voiceData = buf.readBits();
+        let length = buf.readInt16();
+        this.voiceData = buf.readBits(length);
     }
 }
 class SvcPrint extends NetMessage {
@@ -187,7 +188,7 @@ class SvcSounds extends NetMessage {
             this.sounds = [];
             while (sounds--) {
                 let sound = new SoundInfo();
-                sound.read(data);
+                sound.read(data, demo);
                 this.sounds.push(sound);
             }
         }
@@ -229,22 +230,28 @@ class SvcSplitScreen extends NetMessage {
 class SvcUserMessage extends NetMessage {
     read(buf, demo) {
         this.msgType = buf.readInt8();
-        this.length = buf.readBits(demo.isNewEngine() ? 12 : 11);
-        this.msgData = buf.readBits(this.length);
+        let length = buf.readBits(demo.isNewEngine() ? 12 : 11);
+        this.msgData = buf.readBits(length);
     }
 }
 class SvcEntityMessage extends NetMessage {
     read(buf) {
         this.entityIndex = buf.readBits(11);
         this.classId = buf.readBits(9);
-        this.length = buf.readBits(11);
-        buf.readBits(this.length);
+        let length = buf.readBits(11);
+        buf.readBits(length);
     }
 }
 class SvcGameEvent extends NetMessage {
-    read(buf) {
+    read(buf, demo) {
         let length = buf.readBits(11);
-        this.data = buf.readBitStream(length);
+        let data = buf.readBitStream(length);
+
+        if (demo.gameEventManager) {
+            this.event = demo.gameEventManager.unserializeEvent(data);
+        } else {
+            this.data = data;
+        }
     }
 }
 class SvcPacketEntities extends NetMessage {
@@ -254,80 +261,16 @@ class SvcPacketEntities extends NetMessage {
         this.deltaFrom = this.isDelta ? buf.readInt32() : 0;
         this.baseLine = buf.readBoolean();
         this.updatedEntries = buf.readBits(11);
-        this.length = buf.readBits(20);
+        let length = buf.readBits(20);
         this.updateBaseline = buf.readBoolean();
-        this.data = buf.readBits(this.length);
+        this.data = buf.readBits(length);
     }
 }
 class SvcTempEntities extends NetMessage {
     read(buf) {
         this.numEntries = buf.readInt8();
         let length = buf.readBits(17);
-        this.buffer = buf.readBitStream(length);
-    }
-    readFieldIndex(buf, lastIndex, newWay) {
-        if (newWay && buf.readBoolean()) {
-            return lastIndex + 1;
-        }
-
-        let ret = 0;
-
-        if (newWay && buf.readBoolean()) {
-            ret = buf.readBits(3);
-        } else {
-            ret = buf.readBits(7);
-
-            switch (ret & (32 | 64)) {
-                case 32:
-                    ret = (ret & ~96) | (buf.readBits(2) << 5);
-                    break;
-                case 64:
-                    ret = (ret & ~96) | (buf.readBits(4) << 5);
-                    break;
-                case 96:
-                    ret = (ret & ~96) | (buf.readBits(7) << 5);
-                    break;
-            }
-        }
-
-        if (ret === 0xfff) {
-            return -1;
-        }
-
-        return lastIndex + 1 + ret;
-    }
-    parse(serverClasses) {
-        let buf = this.buffer;
-        for (let i = 0; i < this.numEntries; ++i) {
-            this.delay = buf.readBoolean() ? buf.readBits(8) / 100 : 0;
-
-            if (buf.readBoolean()) {
-                this.classId = buf.readBits(7);
-                let serverClass = serverClasses.find((sc) => sc.classid === this.classId);
-
-                let newWay = buf.readBoolean();
-
-                let lastIndex = -1;
-                let fieldIndices = [];
-                while (true) {
-                    lastIndex = this.readFieldIndex(buf, lastIndex, newWay);
-                    if (lastIndex === -1) {
-                        break;
-                    }
-                    fieldIndices.push(lastIndex);
-                }
-
-                let updatedProps = [];
-                for (let index of fieldIndices) {
-                    let flattenedProp = serverClass.flattenedProps[index];
-
-                    updatedProps.push({
-                        prop: flattenedProp,
-                        value: flattenedProp.decode(buf),
-                    });
-                }
-            }
-        }
+        this.data = buf.readBitStream(length);
     }
 }
 class SvcPrefetch extends NetMessage {
@@ -338,12 +281,12 @@ class SvcPrefetch extends NetMessage {
 class SvcMenu extends NetMessage {
     read(buf) {
         this.menuType = buf.readInt16();
-        this.length = buf.readInt32();
-        this.data = buf.readBits(this.length);
+        let length = buf.readInt32();
+        this.data = buf.readBits(length);
     }
 }
 class SvcGameEventList extends NetMessage {
-    read(buf) {
+    read(buf, demo) {
         class GameEventDescriptor {
             read(buf) {
                 this.eventId = buf.readBits(9);
@@ -362,12 +305,14 @@ class SvcGameEventList extends NetMessage {
         let length = buf.readBits(20);
         let data = buf.readBitStream(length);
 
-        this.gameEvents = [];
+        let gameEvents = [];
         while (events--) {
             let descriptor = new GameEventDescriptor();
             descriptor.read(data);
-            this.gameEvents.push(descriptor);
+            gameEvents.push(descriptor);
         }
+
+        demo.gameEventManager = new GameEventManager(gameEvents);
     }
 }
 class SvcGetCvarValue extends NetMessage {
@@ -378,14 +323,14 @@ class SvcGetCvarValue extends NetMessage {
 }
 class SvcCmdKeyValues extends NetMessage {
     read(buf) {
-        this.length = buf.readInt32();
-        this.buffer = buf.readArrayBuffer(this.length);
+        let length = buf.readInt32();
+        this.buffer = buf.readArrayBuffer(length);
     }
 }
 class SvcPaintMapData extends NetMessage {
     read(buf) {
-        this.length = buf.readInt32();
-        this.data = buf.readBits(this.length);
+        let length = buf.readInt32();
+        this.data = buf.readBitStream(length);
     }
 }
 

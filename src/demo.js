@@ -13,10 +13,22 @@ class SourceDemo {
         return this.demoProtocol === 4;
     }
     findMessage(type) {
-        return this.messages.find((msg) => msg.isType(type));
+        return this.messages.find((msg) => (typeof type === 'function' ? type(msg) : msg.isType(type)));
     }
     findMessages(type) {
-        return this.messages.filter((msg) => msg.isType(type));
+        return this.messages.filter((msg) => (typeof type === 'function' ? type(msg) : msg.isType(type)));
+    }
+    findPacket(type) {
+        return this.findMessages('Packet')
+            .map((msg) => msg.packets)
+            .reduce((acc, val) => acc.concat(val), [])
+            .find((packet) => (typeof type === 'function' ? type(packet) : packet.isType(type)));
+    }
+    findPackets(type) {
+        return this.findMessages('Packet')
+            .map((msg) => msg.packets)
+            .reduce((acc, val) => acc.concat(val), [])
+            .filter((packet) => (typeof type === 'function' ? type(packet) : packet.isType(type)));
     }
     readHeader(buf) {
         this.demoFileStamp = buf.readASCIIString(8);
@@ -47,12 +59,13 @@ class SourceDemo {
             let type = buf.readInt8();
             let messageType = demoMessages[type];
             if (messageType) {
-                let message = messageType
-                    .default(type)
-                    .setTick(buf.readInt32())
-                    .setSlot(readSlot ? buf.readInt8() : undefined)
-                    .read(buf, this);
-                this.messages.push(message);
+                let message = messageType.default(type).setTick(buf.readInt32());
+
+                if (readSlot) {
+                    message.setSlot(buf.readInt8());
+                }
+
+                this.messages.push(message.read(buf, this));
             } else {
                 throw new Error(`Unknown demo message type: ${type}`);
             }
@@ -138,6 +151,8 @@ class SourceDemo {
                 message.packets = packets;
             }
         }
+
+        return this;
     }
     detectGame(sourceGames = SourceGames) {
         this.game = sourceGames.find((game) => game.directory === this.gameDirectory);

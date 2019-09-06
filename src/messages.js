@@ -40,7 +40,10 @@ class Message {
 
 class Packet extends Message {
     findPacket(type) {
-        return this.packets.find((packet) => packet.isType(type));
+        return this.packets.find((packet) => (typeof type === 'function' ? type(packet) : packet.isType(type)));
+    }
+    findPackets(type) {
+        return this.packets.filter((packet) => (typeof type === 'function' ? type(packet) : packet.isType(type)));
     }
     read(buf, demo) {
         let mssc = demo.demoProtocol === 4 ? 2 : 1;
