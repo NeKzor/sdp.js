@@ -75,7 +75,7 @@ class NetSignonState extends NetMessage {
             this.numServerPlayers = buf.readInt32();
             let length = buf.readInt32();
             if (length > 0) {
-                this.playersNetworkids = buf.readArrayBuffer(length);
+                this.playersNetworkIds = buf.readArrayBuffer(length);
             }
             length = buf.readInt32();
             if (length > 0) {
@@ -104,7 +104,7 @@ class SvcServerInfo extends NetMessage {
         this.cOs = String.fromCharCode(buf.readInt8());
         this.gameDir = buf.readASCIIString();
         this.mapName = buf.readASCIIString();
-        this.mapName = buf.readASCIIString();
+        this.skyName = buf.readASCIIString();
         this.hostName = buf.readASCIIString();
     }
 }
@@ -214,9 +214,10 @@ class SvcBspDecal extends NetMessage {
     read(buf) {
         this.pos = buf.readVectorCoord(buf);
         this.decalTextureIndex = buf.readBits(9);
-        let flag = buf.readBoolean();
-        this.entityIndex = flag ? buf.readBits(11) : 0;
-        this.modelIndex = flag ? buf.readBits(11) : 0;
+        if (buf.readBoolean()) {
+            this.entityIndex = buf.readBits(11);
+            this.modelIndex = buf.readBits(11);
+        }
         this.lowPriority = buf.readBoolean();
     }
 }
