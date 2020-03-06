@@ -29,31 +29,15 @@ class SourceTimer {
     }
     time(demo) {
         if (demo.game === undefined) {
-            throw new Error('Cannot check time speedrun detecting the game first.');
+            demo.detectGame();
         }
 
         let result = new TimingResult(demo);
 
-        let startTick = this.checkRules(demo, 'start');
-        let endTick = this.checkRules(demo, 'end');
-
-        if (startTick != undefined && endTick != undefined) {
-            demo.adjustRange(endTick, startTick);
-        } else if (startTick != undefined) {
-            demo.adjustRange(0, startTick);
-        } else if (endTick != undefined) {
-            demo.adjustRange(endTick, 0);
-        }
-
-        return result.complete(demo);
-    }
-    checkRules(demo, type) {
-        let candidates = demo.game.rules.filter((rule) => rule.type === type);
-
         // Find all rules that match the map name. Otherwise fall back to generic
         // rules which are used to detect coop spawn and loading screens
 
-        let rules = candidates.filter((rule) => {
+        let rules = demo.game.rules.filter((rule) => {
             if (Array.isArray(rule.map)) {
                 return rule.map.includes(demo.mapName);
             }
@@ -61,27 +45,41 @@ class SourceTimer {
         });
 
         if (rules.length === 0) {
-            rules = candidates.filter((rule) => rule.map === undefined);
+            rules = demo.game.rules.filter((rule) => rule.map === undefined);
         }
 
-        if (rules.length === 0) {
-            return undefined;
+        if (rules.length > 0) {
+            let gameInfo = this.generateGameInfo(demo);
+            let matches = this.simulate(gameInfo, rules);
+            let start = this.findMatch(matches, 'start');
+            let end = this.findMatch(matches, 'end');
+            const calcTick = (match) => match.tick + match.rule.offset;
+
+            if (start !== undefined && end !== undefined) {
+                demo.adjustRange(calcTick(end), calcTick(start));
+            } else if (start !== undefined) {
+                demo.adjustRange(0, calcTick(start));
+            } else if (end !== undefined) {
+                demo.adjustRange(calcTick(end), 0);
+            }
         }
 
+        return result.complete(demo);
+    }
+    generateGameInfo(demo) {
         // Generate data map which contains:
         //      - Position of current and previous tick
-        //      - Commands of current and previous tick
+        //      - Commands of current tick
 
         let gameInfo = new Map();
-        let oldPosition = new Vector(0, 0, 0);
-        let oldCommands = [];
+        let prevPos = new Vector(0, 0, 0);
 
         demo.findMessages('Packet').forEach(({ tick, cmdInfo }) => {
-            if (tick !== 0 && !gameInfo.get(tick)) {
+            if (tick > 0) {
                 gameInfo.set(tick, {
-                    position: {
-                        previous: oldPosition,
-                        current: (oldPosition = cmdInfo[this.splitScreenIndex].viewOrigin),
+                    pos: {
+                        previous: prevPos,
+                        current: (prevPos = cmdInfo[this.splitScreenIndex].viewOrigin),
                     },
                 });
             }
@@ -89,69 +87,77 @@ class SourceTimer {
 
         demo.findMessages('ConsoleCmd').forEach(({ tick, command }) => {
             // Ignore button inputs since they aren't really useful
-            if (tick === 0 || command.startsWith('+') || command.startsWith('-')) {
+            if (tick <= 0 || command.startsWith('+') || command.startsWith('-')) {
                 return;
             }
-
-            let newCommands = [command];
 
             let value = gameInfo.get(tick);
             if (!value) {
                 gameInfo.set(tick, {
-                    commands: {
-                        previous: oldCommands,
-                        current: (oldCommands = newCommands),
-                    },
+                    cmds: [command],
                 });
             } else {
-                gameInfo.set(tick, {
-                    ...value,
-                    commands: {
-                        previous: value.previous ? value.previous.concat(oldCommands) : oldCommands,
-                        current: (oldCommands = value.current ? value.current.concat(newCommands) : newCommands),
-                    },
-                });
+                if (value.cmds) {
+                    value.cmds = value.cmds.concat(command);
+                } else {
+                    value.cmds = [command];
+                }
+                gameInfo.set(tick, value);
             }
         });
 
-        // Game simulation: Call and pass generated data for every rule every tick
-        // Rules will decide whether they should be matched as a start or end event
+        return gameInfo;
+    }
+    simulate(gameInfo, rules) {
+        // Game simulation: Pass generated data for every tick to every rule's match function
+        // Rules only return true if they detect an event
 
         let matches = [];
         for (let [tick, info] of gameInfo) {
             for (let rule of rules) {
-                if (rule.match({ pos: info.position, cmds: info.commands }) === true) {
+                if (rule.match(info) === true) {
                     matches.push({ rule: rule, tick: tick });
                 }
             }
         }
 
+        return matches;
+    }
+    findMatch(allMatches, type) {
+        let matches = allMatches.filter((m) => m.rule.type === type);
+        console.log(matches);
         if (matches.length > 0) {
             if (matches.length === 1) {
-                return matches[0].tick + matches[0].rule.offset;
+                return matches[0];
             }
 
             // Match rules until we have a single match:
-            //      1.) Favour rules that match the earliest tick
+            //      1.) Favour rules that match the
+            //              a.) latest tick if it is a start event
+            //              b.) earliest tick if it is an end event
             //      2.) Favour rules that match the
             //              a.) lowest offset if it is a start event
             //              b.) or highest offset if it is an end event
             //      3.) Throw exception and fail because there might be timing issue
 
-            let matchTick = matches.map((m) => m.tick).reduce((a, b) => Math.min(a, b));
+            let matchTick =
+                type === 'start'
+                    ? matches.map((m) => m.tick).reduce((a, b) => Math.max(a, b))
+                    : matches.map((m) => m.tick).reduce((a, b) => Math.min(a, b));
+
             matches = matches.filter((m) => m.tick === matchTick);
             if (matches.length === 1) {
-                return matches[0].tick + matches[0].rule.offset;
+                return matches[0];
             }
 
             let matchOffset =
-                matches[0].rule.type === 'start'
+                type === 'start'
                     ? matches.map((m) => m.rule.offset).reduce((a, b) => Math.min(a, b))
                     : matches.map((m) => m.rule.offset).reduce((a, b) => Math.max(a, b));
 
             matches = matches.filter((m) => m.rule.offset === matchOffset);
             if (matches.length === 1) {
-                return matches[0].tick + matches[0].rule.offset;
+                return matches[0];
             }
 
             throw new Error(`Multiple adjustment matches: ${JSON.stringify(matches)}`);

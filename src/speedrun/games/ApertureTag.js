@@ -28,7 +28,7 @@ const ApertureTag = {
             match: ({ cmds }) => {
                 if (cmds != undefined) {
                     let outro = 'playvideo_exitcommand_nointerrupt at_credits end_movie credits_video';
-                    return cmds.current.includes(outro);
+                    return cmds.includes(outro);
                 }
                 return false;
             },
@@ -39,7 +39,7 @@ const ApertureTag = {
             type: 'start',
             match: ({ cmds }) => {
                 if (cmds != undefined) {
-                    return cmds.current.includes('dsp_player 0') && cmds.current.includes('ss_force_primary_fullscreen 0');
+                    return cmds.includes('dsp_player 0') && cmds.includes('ss_force_primary_fullscreen 0');
                 }
                 return false;
             },
@@ -50,7 +50,7 @@ const ApertureTag = {
             type: 'end',
             match: ({ cmds }) => {
                 if (cmds != undefined) {
-                    return cmds.current.find((cmd) => cmd.startsWith('playvideo_end_level_transition')) != undefined;
+                    return cmds.find((cmd) => cmd.startsWith('playvideo_end_level_transition')) != undefined;
                 }
                 return false;
             },

@@ -20,7 +20,7 @@ const Portal = {
             type: 'end',
             match: ({ cmds }) => {
                 if (cmds != undefined) {
-                    return cmds.current.includes('startneurotoxins 99999');
+                    return cmds.includes('startneurotoxins 99999');
                 }
                 return false;
             },

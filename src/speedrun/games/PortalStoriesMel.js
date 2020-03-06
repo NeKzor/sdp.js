@@ -28,7 +28,7 @@ const PortalStoriesMel = {
             match: ({ cmds }) => {
                 if (cmds != undefined) {
                     let outro = 'playvideo_exitcommand_nointerrupt aegis_interior.bik end_movie movie_aegis_interior';
-                    return cmds.current.includes(outro);
+                    return cmds.includes(outro);
                 }
                 return false;
             },

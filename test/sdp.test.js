@@ -61,8 +61,8 @@ describe('SourceDemo', () => {
 
             let result = SourceTimer.default().time(demo);
 
-            assert.equal(demo.playbackTime, 334.6833492922783);
             assert.equal(demo.playbackTicks, 20081);
+            assert.equal(demo.playbackTime, 334.6833492922783);
 
             assert.equal(result.delta, 735);
         });

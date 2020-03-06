@@ -44,7 +44,7 @@ const Portal2 = {
             type: 'start',
             match: ({ cmds }) => {
                 if (cmds != undefined) {
-                    return cmds.current.includes('dsp_player 0') && cmds.current.includes('ss_force_primary_fullscreen 0');
+                    return cmds.includes('dsp_player 0') && cmds.includes('ss_force_primary_fullscreen 0');
                 }
                 return false;
             },
@@ -86,7 +86,7 @@ const Portal2 = {
             type: 'end',
             match: ({ cmds }) => {
                 if (cmds != undefined) {
-                    return cmds.current.find((cmd) => cmd.startsWith('playvideo_end_level_transition')) != undefined;
+                    return cmds.find((cmd) => cmd.startsWith('playvideo_end_level_transition')) != undefined;
                 }
                 return false;
             },
@@ -98,7 +98,7 @@ const Portal2 = {
             match: ({ cmds }) => {
                 if (cmds != undefined) {
                     let outro = 'playvideo_exitcommand_nointerrupt coop_outro end_movie vault-movie_outro';
-                    return cmds.current.includes(outro);
+                    return cmds.includes(outro);
                 }
                 return false;
             },
@@ -110,7 +110,7 @@ const Portal2 = {
             match: ({ cmds }) => {
                 if (cmds != undefined) {
                     let outro = 'playvideo_exitcommand_nointerrupt dlc1_endmovie end_movie movie_outro';
-                    return cmds.current.includes(outro);
+                    return cmds.includes(outro);
                 }
                 return false;
             },
