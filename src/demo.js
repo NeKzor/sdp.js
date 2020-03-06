@@ -46,9 +46,6 @@ class SourceDemo {
         this.playbackFrames = buf.readInt32();
         this.signOnLength = buf.readInt32();
         this.messages = [];
-
-        this.readHea;
-
         return this;
     }
     readMessages(buf) {
