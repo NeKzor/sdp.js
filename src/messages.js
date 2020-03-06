@@ -61,6 +61,11 @@ class Packet extends Message {
         return this;
     }
 }
+class SignOn extends Packet {
+    isType(name) {
+        return super.constructor.name === name || super.isType(name);
+    }
+}
 class SyncTick extends Message {
     read() {
         return this;
@@ -108,7 +113,7 @@ class StringTable extends Message {
 module.exports = {
     NewEngine: [
         undefined,
-        Packet, // 1
+        SignOn, // 1
         Packet, // 2
         SyncTick, // 3
         ConsoleCmd, // 4
@@ -120,7 +125,7 @@ module.exports = {
     ],
     OldEngine: [
         undefined,
-        Packet, // 1
+        SignOn, // 1
         Packet, // 2
         SyncTick, // 3
         ConsoleCmd, // 4
