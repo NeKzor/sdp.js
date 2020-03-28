@@ -1,4 +1,5 @@
 const { Vector } = require('../types/Vector');
+const { Packet, ConsoleCmd } = require('../messages');
 
 class TimingResult {
     constructor({ playbackTicks, playbackTime }) {
@@ -32,23 +33,23 @@ class SourceTimer {
             throw new Error('Cannot check time speedrun detecting the game first.');
         }
 
-        let result = new TimingResult(demo);
+        const result = new TimingResult(demo);
 
-        let startTick = this.checkRules(demo, 'start');
-        let endTick = this.checkRules(demo, 'end');
+        const startTick = this.checkRules(demo, 'start');
+        const endTick = this.checkRules(demo, 'end');
 
-        if (startTick != undefined && endTick != undefined) {
+        if (startTick !== undefined && endTick !== undefined) {
             demo.adjustRange(endTick, startTick);
-        } else if (startTick != undefined) {
+        } else if (startTick !== undefined) {
             demo.adjustRange(0, startTick);
-        } else if (endTick != undefined) {
+        } else if (endTick !== undefined) {
             demo.adjustRange(endTick, 0);
         }
 
         return result.complete(demo);
     }
     checkRules(demo, type) {
-        let candidates = demo.game.rules.filter((rule) => rule.type === type);
+        const candidates = demo.game.rules.filter((rule) => rule.type === type);
 
         // Find all rules that match the map name. Otherwise fall back to generic
         // rules which are used to detect coop spawn and loading screens
@@ -72,11 +73,11 @@ class SourceTimer {
         //      - Position of current and previous tick
         //      - Commands of current and previous tick
 
-        let gameInfo = new Map();
+        const gameInfo = new Map();
         let oldPosition = new Vector(0, 0, 0);
         let oldCommands = [];
 
-        demo.findMessages('Packet').forEach(({ tick, cmdInfo }) => {
+        demo.findMessages(Packet).forEach(({ tick, cmdInfo }) => {
             if (tick !== 0 && !gameInfo.get(tick)) {
                 gameInfo.set(tick, {
                     position: {
@@ -87,15 +88,15 @@ class SourceTimer {
             }
         });
 
-        demo.findMessages('ConsoleCmd').forEach(({ tick, command }) => {
+        demo.findMessages(ConsoleCmd).forEach(({ tick, command }) => {
             // Ignore button inputs since they aren't really useful
             if (tick === 0 || command.startsWith('+') || command.startsWith('-')) {
                 return;
             }
 
-            let newCommands = [command];
+            const newCommands = [command];
 
-            let value = gameInfo.get(tick);
+            const value = gameInfo.get(tick);
             if (!value) {
                 gameInfo.set(tick, {
                     commands: {
@@ -118,8 +119,8 @@ class SourceTimer {
         // Rules will decide whether they should be matched as a start or end event
 
         let matches = [];
-        for (let [tick, info] of gameInfo) {
-            for (let rule of rules) {
+        for (const [tick, info] of gameInfo) {
+            for (const rule of rules) {
                 if (rule.match({ pos: info.position, cmds: info.commands }) === true) {
                     matches.push({ rule: rule, tick: tick });
                 }
@@ -138,13 +139,13 @@ class SourceTimer {
             //              b.) or highest offset if it is an end event
             //      3.) Throw exception and fail because there might be timing issue
 
-            let matchTick = matches.map((m) => m.tick).reduce((a, b) => Math.min(a, b));
+            const matchTick = matches.map((m) => m.tick).reduce((a, b) => Math.min(a, b));
             matches = matches.filter((m) => m.tick === matchTick);
             if (matches.length === 1) {
                 return matches[0].tick + matches[0].rule.offset;
             }
 
-            let matchOffset =
+            const matchOffset =
                 matches[0].rule.type === 'start'
                     ? matches.map((m) => m.rule.offset).reduce((a, b) => Math.min(a, b))
                     : matches.map((m) => m.rule.offset).reduce((a, b) => Math.max(a, b));

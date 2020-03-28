@@ -15,17 +15,17 @@ class GameEventManager {
     constructor(gameEvents) {
         this.gameEvents = gameEvents;
     }
-    unserializeEvent(buf) {
-        let eventId = buf.readBits(9);
+    deserializeEvent(buf) {
+        const eventId = buf.readBits(9);
 
-        let descriptor = this.gameEvents.find((descriptor) => descriptor.eventId === eventId);
+        const descriptor = this.gameEvents.find(descriptor => descriptor.eventId === eventId);
         if (!descriptor) {
             throw new Error(`Unknown event id ${eventId}!`);
         }
 
-        let event = new GameEvent(descriptor);
+        const event = new GameEvent(descriptor);
 
-        for (let [keyName, type] of Object.entries(descriptor.keys)) {
+        for (const [keyName, type] of Object.entries(descriptor.keys)) {
             switch (type) {
                 case 0:
                     break;

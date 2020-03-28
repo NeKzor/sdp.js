@@ -1,3 +1,5 @@
+const { ConsoleCmd, UserCmd } = require('../messages');
+
 const ReplayHeader = 'sar-tas-replay v1.8\n';
 
 class SarTimer {
@@ -9,9 +11,9 @@ class SarTimer {
             throw new Error('Cannot adjust ticks without parsed messages.');
         }
 
-        let timings = [];
-        for (let message of demo.messages) {
-            if (message.isType('ConsoleCmd')) {
+        const timings = [];
+        for (const message of demo.messages) {
+            if (message instanceof ConsoleCmd) {
                 if (message.command === 'sar_timer_start') {
                     timings.push({ tick: message.tick, type: 'start' });
                 } else if (message.command === 'sar_timer_stop') {
@@ -20,8 +22,8 @@ class SarTimer {
             }
         }
 
-        let start = timings.reverse().find((x) => x.type === 'start');
-        let end = timings.find((x) => x.type === 'stop');
+        const start = timings.reverse().find((x) => x.type === 'start');
+        const end = timings.find((x) => x.type === 'stop');
 
         return start !== undefined && end !== undefined
             ? { startTick: start.tick, endTick: end.tick, delta: end.tick - start.tick }
@@ -40,9 +42,9 @@ class SarReplay extends Buffer {
         this.writeString(ReplayHeader);
         this.writeInt32(demos.length);
 
-        for (let demo of demos) {
-            for (let message of demo.messages) {
-                if (message.isType('UserCmd') && message.userCmd) {
+        for (const demo of demos) {
+            for (const message of demo.messages) {
+                if (message instanceof UserCmd && message.userCmd) {
                     this.writeInt32(message.userCmd.buttons || 0);
                     this.writeFloat(message.userCmd.forwardMove || 0);
                     this.writeInt8(message.userCmd.impulse || 0);
@@ -60,27 +62,27 @@ class SarReplay extends Buffer {
         return this.buffer;
     }
     writeInt8(value) {
-        let data = this.alloc(1);
+        const data = this.alloc(1);
         data.writeInt8(value, 0);
         this.buffer = this.concat([this.buffer, data]);
     }
     writeInt16(value) {
-        let data = this.alloc(2);
+        const data = this.alloc(2);
         data.writeInt16LE(value, 0);
         this.buffer = this.concat([this.buffer, data]);
     }
     writeInt32(value) {
-        let data = this.alloc(4);
+        const data = this.alloc(4);
         data.writeInt32LE(value, 0);
         this.buffer = this.concat([this.buffer, data]);
     }
     writeFloat(value) {
-        let data = this.alloc(4);
+        const data = this.alloc(4);
         data.writeFloatLE(value, 0);
         this.buffer = this.concat([this.buffer, data]);
     }
     writeString(value) {
-        let data = this.alloc(value.length);
+        const data = this.alloc(value.length);
         data.write(value, 0);
         this.buffer = this.concat([this.buffer, data]);
     }

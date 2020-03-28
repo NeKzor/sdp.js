@@ -1,6 +1,6 @@
-const DemoMessages = require('./messages');
+const { Packet, SyncTick, DataTable, Message, ...DemoMessages } = require('./messages');
 const { SendTable, ServerClassInfo } = require('./types/DataTables');
-const NetMessages = require('./types/NetMessages');
+const { NetMessage, ...NetMessages } = require('./types/NetMessages');
 const { StringTable } = require('./types/StringTables');
 const { UserCmd } = require('./types/UserCmd');
 const SourceGames = require('./speedrun/games');
@@ -13,22 +13,47 @@ class SourceDemo {
         return this.demoProtocol === 4;
     }
     findMessage(type) {
-        return this.messages.find((msg) => (typeof type === 'function' ? type(msg) : msg.isType(type)));
+        const byType = type.prototype instanceof Message
+            ? (msg) => msg instanceof type
+            : (msg) => type(msg);
+        return this.messages.find(byType);
     }
     findMessages(type) {
-        return this.messages.filter((msg) => (typeof type === 'function' ? type(msg) : msg.isType(type)));
+        const byType = type.prototype instanceof Message
+            ? (msg) => msg instanceof type
+            : (msg) => type(msg);
+        return this.messages.filter(byType);
     }
     findPacket(type) {
-        return this.findMessages('Packet')
-            .map((msg) => msg.packets)
-            .reduce((acc, val) => acc.concat(val), [])
-            .find((packet) => (typeof type === 'function' ? type(packet) : packet.isType(type)));
+        const byType = type.prototype instanceof NetMessage
+            ? (packet) => packet instanceof type
+            : (packet) => type(packet);
+
+        for (const msg of this.messages) {
+            if (msg instanceof Packet) {
+                const packet = msg.packets.find(byType);
+                if (packet) {
+                    return packet;
+                }
+            }
+        }
     }
     findPackets(type) {
-        return this.findMessages('Packet')
-            .map((msg) => msg.packets)
-            .reduce((acc, val) => acc.concat(val), [])
-            .filter((packet) => (typeof type === 'function' ? type(packet) : packet.isType(type)));
+        const isType = type.prototype instanceof NetMessage
+            ? (packet) => packet instanceof type
+            : (packet) => type(packet);
+
+        const packets = [];
+        for (const msg of this.messages) {
+            if (msg instanceof Packet) {
+                for (const packet of msg.packets) {
+                    if (isType(packet)) {
+                        packets.push(packet);
+                    }
+                }
+            }
+        }
+        return packets;
     }
     readHeader(buf) {
         this.demoFileStamp = buf.readASCIIString(8);
@@ -49,14 +74,14 @@ class SourceDemo {
         return this;
     }
     readMessages(buf) {
-        let readSlot = this.isNewEngine();
-        let demoMessages = readSlot ? DemoMessages.NewEngine : DemoMessages.OldEngine;
+        const readSlot = this.isNewEngine();
+        const demoMessages = readSlot ? DemoMessages.NewEngine : DemoMessages.OldEngine;
 
         while (buf.bitsLeft > 8) {
-            let type = buf.readInt8();
-            let messageType = demoMessages[type];
+            const type = buf.readInt8();
+            const messageType = demoMessages[type];
             if (messageType) {
-                let message = messageType.default(type).setTick(buf.readInt32());
+                const message = messageType.default(type).setTick(buf.readInt32());
 
                 if (readSlot) {
                     message.setSlot(buf.readInt8());
@@ -71,9 +96,9 @@ class SourceDemo {
         return this;
     }
     readUserCmds() {
-        for (let message of this.messages) {
-            if (message.isType('UserCmd')) {
-                let cmd = new UserCmd();
+        for (const message of this.messages) {
+            if (message instanceof DemoMessages.UserCmd) {
+                const cmd = new UserCmd();
                 cmd.read(message.data);
                 message.userCmd = cmd;
             }
@@ -82,13 +107,13 @@ class SourceDemo {
         return this;
     }
     readStringTables() {
-        for (let message of this.messages) {
-            if (message.isType('StringTable')) {
-                let stringTables = [];
+        for (const message of this.messages) {
+            if (message instanceof DemoMessages.StringTable) {
+                const stringTables = [];
 
                 let tables = message.data.readInt8();
                 while (tables--) {
-                    let table = new StringTable();
+                    const table = new StringTable();
                     table.read(message.data, this);
                     stringTables.push(table);
                 }
@@ -100,22 +125,22 @@ class SourceDemo {
         return this;
     }
     readDataTables() {
-        for (let message of this.messages) {
-            if (message.isType('DataTable')) {
-                let dataTable = {
+        for (const message of this.messages) {
+            if (message instanceof DataTable) {
+                const dataTable = {
                     tables: [],
                     serverClasses: [],
                 };
 
                 while (message.data.readBoolean()) {
-                    let dt = new SendTable();
+                    const dt = new SendTable();
                     dt.read(message.data, this);
                     dataTable.tables.push(dt);
                 }
 
                 let classes = message.data.readInt16();
                 while (classes--) {
-                    let sc = new ServerClassInfo();
+                    const sc = new ServerClassInfo();
                     sc.read(message.data, this);
                     dataTable.serverClasses.push(sc);
                 }
@@ -127,17 +152,17 @@ class SourceDemo {
         return this;
     }
     readPackets(netMessages = undefined) {
-        netMessages = netMessages || (this.demoProtocol === 4 ? NetMessages.Portal2Engine : NetMessages.HalfLife2Engine);
+        netMessages = netMessages || (this.isNewEngine() ? NetMessages.Portal2Engine : NetMessages.HalfLife2Engine);
 
-        for (let message of this.messages) {
-            if (message.isType('Packet')) {
-                let packets = [];
+        for (const message of this.messages) {
+            if (message instanceof Packet) {
+                const packets = [];
                 while (message.data.bitsLeft > 6) {
-                    let type = message.data.readBits(6);
+                    const type = message.data.readBits(6);
 
                     const NetMessage = netMessages[type];
                     if (NetMessage) {
-                        let packet = new NetMessage(type);
+                        const packet = new NetMessage(type);
                         packet.read(message.data, this);
                         packets.push(packet);
                     } else {
@@ -180,8 +205,8 @@ class SourceDemo {
 
         let synced = false;
         let last = 0;
-        for (let message of this.messages) {
-            if (message.isType('SyncTick')) {
+        for (const message of this.messages) {
+            if (message instanceof SyncTick) {
                 synced = true;
             }
 
@@ -204,12 +229,12 @@ class SourceDemo {
             endTick = this.messages[this.messages.length - 1].tick;
         }
 
-        let delta = endTick - startTick;
+        const delta = endTick - startTick;
         if (delta < 0) {
             throw new Error('Start tick is greater than end tick.');
         }
 
-        let ipt = this.getIntervalPerTick();
+        const ipt = this.getIntervalPerTick();
         this.playbackTicks = delta;
         this.playbackTime = ipt * delta;
 
@@ -222,7 +247,7 @@ class SourceDemo {
 
         let synced = false;
         let last = 0;
-        for (let message of this.messages) {
+        for (const message of this.messages) {
             if (message.tick === tick) {
                 synced = true;
             }
@@ -245,15 +270,15 @@ class SourceDemo {
             throw new Error('Cannot adjust ticks without parsed messages.');
         }
 
-        let syncedTicks = [];
-        for (let message of this.messages) {
-            if (message.isType('Packet')) {
-                let view = message.cmdInfo[splitScreenIndex].viewOrigin;
-                let result = demo.messages.find((msg) => {
-                    if (!msg.isType('Packet')) {
+        const syncedTicks = [];
+        for (const message of this.messages) {
+            if (message instanceof Packet) {
+                const view = message.cmdInfo[splitScreenIndex].viewOrigin;
+                const result = demo.messages.find((msg) => {
+                    if (!(msg instanceof Packet)) {
                         return false;
                     }
-                    let match = msg.cmdInfo[splitScreenIndex].viewOrigin;
+                    const match = msg.cmdInfo[splitScreenIndex].viewOrigin;
                     return (
                         Math.abs(match.x - view.x) <= viewTolerance &&
                         Math.abs(match.y - view.y) <= viewTolerance &&

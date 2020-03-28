@@ -40,7 +40,7 @@ class SendTable {
 
         let props = buf.readBits(10, false);
         while (props--) {
-            let prop = new SendProp();
+            const prop = new SendProp();
             prop.read(buf, demo);
             this.props.push(prop);
         }
@@ -49,7 +49,7 @@ class SendTable {
 
 class SendProp {
     read(buf, demo) {
-        let isPortal2 = demo.gameDirectory === 'portal2';
+        const isPortal2 = demo.gameDirectory === 'portal2';
 
         this.type = buf.readBits(5, false);
         this.varName = buf.readASCIIString();

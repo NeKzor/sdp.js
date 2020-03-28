@@ -16,9 +16,6 @@ class Message {
     getName() {
         return this.constructor.name;
     }
-    isType(name) {
-        return this.constructor.name === name;
-    }
     getTick() {
         return this.tick;
     }
@@ -39,18 +36,29 @@ class Message {
 }
 
 class Packet extends Message {
+    constructor(type) {
+        super(type);
+    }
     findPacket(type) {
-        return this.packets.find((packet) => (typeof type === 'function' ? type(packet) : packet.isType(type)));
+        const byType = type.prototype instanceof NetMessage
+            ? (packet) => packet instanceof type
+            : (packet) => type(packet);
+
+        return this.packets.find(byType);
     }
     findPackets(type) {
-        return this.packets.filter((packet) => (typeof type === 'function' ? type(packet) : packet.isType(type)));
+        const byType = type.prototype instanceof NetMessage
+            ? (packet) => packet instanceof type
+            : (packet) => type(packet);
+
+        return this.packets.filter(byType);
     }
     read(buf, demo) {
         let mssc = demo.demoProtocol === 4 ? 2 : 1;
 
         this.cmdInfo = [];
         while (mssc--) {
-            let cmd = new CmdInfo();
+            const cmd = new CmdInfo();
             cmd.read(buf);
             this.cmdInfo.push(cmd);
         }
@@ -60,12 +68,13 @@ class Packet extends Message {
         this.data = buf.readBitStream(buf.readInt32() * 8);
         return this;
     }
-}
-class SignOn extends Packet {
-    isType(name) {
-        return super.constructor.name === name || super.isType(name);
+    *[Symbol.iterator]() {
+        for (const packet of this.packets) {
+            yield packet;
+        }
     }
 }
+class SignOn extends Packet {}
 class SyncTick extends Message {
     read() {
         return this;
@@ -134,4 +143,14 @@ module.exports = {
         Stop, // 7
         StringTable, // 8
     ],
+    Message,
+    SignOn,
+    Packet,
+    SyncTick,
+    ConsoleCmd,
+    UserCmd,
+    DataTable,
+    Stop,
+    CustomData,
+    StringTable,
 };

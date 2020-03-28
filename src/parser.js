@@ -17,31 +17,25 @@ class SourceDemoParser {
     static default() {
         return new this(DefaultParsingOptions);
     }
-    with(option) {
-        this.options[option] = true;
-        return this;
-    }
-    without(option) {
-        this.options[option] = false;
-        return this;
-    }
-    parse(buffer, options = undefined) {
-        options = {
+    setOptions(options = DefaultParsingOptions) {
+        this.options = {
             ...this.options,
             ...options,
         };
+        return this;
+    }
+    parse(buffer) {
+        const buf = new SourceDemoBuffer(Buffer.concat([buffer], buffer.length + 4 - (buffer.length % 4)));
+        const demo = SourceDemo.default();
 
-        let buf = new SourceDemoBuffer(Buffer.concat([buffer], buffer.length + 4 - (buffer.length % 4)));
-        let demo = SourceDemo.default();
-
-        if (options.header) demo.readHeader(buf);
-        if (options.messages) demo.readMessages(buf);
+        if (this.options.header) demo.readHeader(buf);
+        if (this.options.messages) demo.readMessages(buf);
 
         if (demo.messages.length > 0) {
-            if (options.stringTables) demo.readStringTables();
-            if (options.dataTables) demo.readDataTables();
-            if (options.packets) demo.readPackets();
-            if (options.userCmds) demo.readUserCmds();
+            if (this.options.stringTables) demo.readStringTables();
+            if (this.options.dataTables) demo.readDataTables();
+            if (this.options.packets) demo.readPackets();
+            if (this.options.userCmds) demo.readUserCmds();
         }
 
         return demo;

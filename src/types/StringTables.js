@@ -8,8 +8,8 @@ class StringTable {
 
         let entries = buf.readInt16();
         while (entries--) {
-            let entryName = buf.readASCIIString();
-            let entry = new StringTableEntry(entryName);
+            const entryName = buf.readASCIIString();
+            const entry = new StringTableEntry(entryName);
 
             if (buf.readBoolean()) {
                 entry.read(buf, EntryType, demo);
@@ -21,8 +21,8 @@ class StringTable {
         if (buf.readBoolean()) {
             let entries = buf.readInt16();
             while (entries--) {
-                let entryName = buf.readASCIIString();
-                let entry = new StringTableClass(entryName);
+                const entryName = buf.readASCIIString();
+                const entry = new StringTableClass(entryName);
 
                 if (buf.readBoolean()) {
                     entry.read(buf, demo);
@@ -39,7 +39,7 @@ class StringTableEntry {
         this.name = name;
     }
     read(buf, type, demo) {
-        let length = buf.readInt16();
+        const length = buf.readInt16();
         if (type) {
             this.data = new type();
             this.data.read(buf.readBitStream(length * 8), demo);
@@ -54,7 +54,7 @@ class StringTableClass {
         this.name = name;
     }
     read(buf) {
-        let length = buf.readInt16();
+        const length = buf.readInt16();
         this.data = buf.readASCIIString(length);
     }
 }

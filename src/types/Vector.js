@@ -10,6 +10,11 @@ class Vector {
     length2D() {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
+    *[Symbol.iterator]() {
+        yield this.x;
+        yield this.y;
+        yield this.z;
+    }
 }
 
 module.exports = {

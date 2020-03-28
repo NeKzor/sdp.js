@@ -1,7 +1,10 @@
 const fs = require('fs');
-const { SourceDemoParser } = require('../src/sdp');
+const {
+    SourceDemoParser,
+    DemoMessages: { ConsoleCmd, UserCmd },
+} = require('../src/sdp');
 
-let file = process.argv[2];
+const file = process.argv[2];
 
 if (!file) {
     console.error('demo path argument not specified!');
@@ -10,19 +13,22 @@ if (!file) {
 
 const IN_JUMP = 1 << 1;
 
-let demo = SourceDemoParser.default()
-    .with('userCmds')
+const demo = SourceDemoParser.default()
+    .setOptions({ userCmds: true })
     .parse(fs.readFileSync(file));
 
-let registeredJumps = demo.findMessages('UserCmd').filter(({ userCmd }) => userCmd.buttons && userCmd.buttons & IN_JUMP);
-let actualJumpInputs = demo.findMessages('ConsoleCmd').filter(({ command }) => command.startsWith('+jump'));
+const registeredJumps = demo
+    .findMessages(UserCmd)
+    .filter(({ userCmd }) => userCmd.buttons && userCmd.buttons & IN_JUMP);
+
+const actualJumpInputs = demo.findMessages(ConsoleCmd).filter(({ command }) => command.startsWith('+jump'));
 
 let prevTick = 0;
 let mouseJumps = 0;
 let keyboardJumps = 0;
 
 actualJumpInputs.forEach(({ tick, command }) => {
-    let mouse = command.endsWith('112') || command.endsWith('113');
+    const mouse = command.endsWith('112') || command.endsWith('113');
     if (tick !== prevTick) {
         console.log('-----------------');
     }
@@ -37,7 +43,7 @@ actualJumpInputs.forEach(({ tick, command }) => {
 });
 
 console.log('---- results ----');
-console.log('registerd jumps: ' + registeredJumps.length);
+console.log('registered jumps: ' + registeredJumps.length);
 console.log('actual jump inputs: ' + actualJumpInputs.length);
 console.log('jumps not registered: ' + (actualJumpInputs.length - registeredJumps.length));
 console.log('jumps with mouse: ' + mouseJumps);

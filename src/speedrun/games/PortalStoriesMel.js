@@ -7,15 +7,15 @@ const PortalStoriesMel = {
             offset: 0,
             type: 'start',
             match: ({ pos }) => {
-                if (pos != undefined) {
-                    let startPos = { x: -4592.0, y: -4475.4052734375, z: 108.683975219727 };
+                if (pos !== undefined) {
+                    const startPos = { x: -4592.0, y: -4475.4052734375, z: 108.683975219727 };
                     return (
                         pos.previous.x === startPos.x &&
                         pos.previous.y === startPos.y &&
                         pos.previous.z === startPos.z &&
-                        pos.current.x != startPos.x &&
-                        pos.current.y != startPos.y &&
-                        pos.current.z != startPos.z
+                        pos.current.x !== startPos.x &&
+                        pos.current.y !== startPos.y &&
+                        pos.current.z !== startPos.z
                     );
                 }
                 return false;
@@ -26,8 +26,8 @@ const PortalStoriesMel = {
             offset: 0,
             type: 'end',
             match: ({ cmds }) => {
-                if (cmds != undefined) {
-                    let outro = 'playvideo_exitcommand_nointerrupt aegis_interior.bik end_movie movie_aegis_interior';
+                if (cmds !== undefined) {
+                    const outro = 'playvideo_exitcommand_nointerrupt aegis_interior.bik end_movie movie_aegis_interior';
                     return cmds.current.includes(outro);
                 }
                 return false;

@@ -1,5 +1,6 @@
 const {
     SourceDemoParser,
+    DemoMessages,
     Speedrun: { SourceTimer },
 } = require('../src/sdp');
 const assert = require('assert');
@@ -8,9 +9,11 @@ const fs = require('fs');
 describe('SourceDemoParser', () => {
     describe('#Portal', () => {
         it('parse header correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal.dem');
+            const buffer = fs.readFileSync('./demos/public/portal.dem');
 
-            let demo = SourceDemoParser.default().parse(buffer, { messages: false });
+            const demo = SourceDemoParser.default()
+                .setOptions({ messages: false })
+                .parse(buffer);
 
             assert.equal(demo.demoFileStamp, 'HL2DEMO');
             assert.equal(demo.demoProtocol, 3);
@@ -27,9 +30,11 @@ describe('SourceDemoParser', () => {
     });
     describe('#Portal 2', () => {
         it('parse header correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal2.dem');
+            const buffer = fs.readFileSync('./demos/public/portal2.dem');
 
-            let demo = SourceDemoParser.default().parse(buffer, { messages: false });
+            const demo = SourceDemoParser.default()
+                .setOptions({ messages: false })
+                .parse(buffer);
 
             assert.equal(demo.demoFileStamp, 'HL2DEMO');
             assert.equal(demo.demoProtocol, 4);
@@ -48,9 +53,9 @@ describe('SourceDemoParser', () => {
 describe('SourceDemo', () => {
     describe('#Portal 2', () => {
         it('time speedrun correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal2.dem');
+            const buffer = fs.readFileSync('./demos/public/portal2.dem');
 
-            let demo = SourceDemoParser.default()
+            const demo = SourceDemoParser.default()
                 .parse(buffer)
                 .adjustTicks()
                 .adjustRange()
@@ -59,7 +64,7 @@ describe('SourceDemo', () => {
             assert.equal(demo.playbackTime, 346.93334987640384);
             assert.equal(demo.playbackTicks, 20816);
 
-            let result = SourceTimer.default().time(demo);
+            const result = SourceTimer.default().time(demo);
 
             assert.equal(demo.playbackTime, 334.6833492922783);
             assert.equal(demo.playbackTicks, 20081);
@@ -71,13 +76,13 @@ describe('SourceDemo', () => {
 describe('readUserCmds', () => {
     describe('#Portal 2', () => {
         it('read CUserCmd correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal2.dem');
+            const buffer = fs.readFileSync('./demos/public/portal2.dem');
 
-            let demo = SourceDemoParser.default()
-                .with('userCmds')
+            const demo = SourceDemoParser.default()
+                .setOptions({ userCmds: true })
                 .parse(buffer);
 
-            let { userCmd } = demo.findMessage('UserCmd');
+            const { userCmd } = demo.findMessage(DemoMessages.UserCmd);
 
             assert.equal(userCmd.commandNumber, 3299);
             assert.equal(userCmd.tickCount, 100);
@@ -97,13 +102,13 @@ describe('readUserCmds', () => {
     });
     describe('#Portal', () => {
         it('read CUserCmd correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal.dem');
+            const buffer = fs.readFileSync('./demos/public/portal.dem');
 
-            let demo = SourceDemoParser.default()
-                .with('userCmds')
+            const demo = SourceDemoParser.default()
+                .setOptions({ userCmds: true })
                 .parse(buffer);
 
-            let { userCmd } = demo.findMessage('UserCmd');
+            const { userCmd } = demo.findMessage(DemoMessages.UserCmd);
 
             assert.equal(userCmd.commandNumber, 16);
             assert.equal(userCmd.tickCount, 4262);
@@ -125,26 +130,26 @@ describe('readUserCmds', () => {
 describe('readStringTables', () => {
     describe('#Portal 2', () => {
         it('read string tables correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal2.dem');
+            const buffer = fs.readFileSync('./demos/public/portal2.dem');
 
-            let demo = SourceDemoParser.default()
-                .with('stringTables')
+            const demo = SourceDemoParser.default()
+                .setOptions({ stringTables: true })
                 .parse(buffer);
 
-            let { stringTables } = demo.findMessage('StringTable');
+            const { stringTables } = demo.findMessage(DemoMessages.StringTable);
 
             assert.equal(stringTables.length, 18);
         });
     });
     describe('#Portal', () => {
         it('read string tables correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal.dem');
+            const buffer = fs.readFileSync('./demos/public/portal.dem');
 
-            let demo = SourceDemoParser.default()
-                .with('stringTables')
+            const demo = SourceDemoParser.default()
+                .setOptions({ stringTables: true })
                 .parse(buffer);
 
-            let { stringTables } = demo.findMessage('StringTable');
+            const { stringTables } = demo.findMessage(DemoMessages.StringTable);
 
             assert.equal(stringTables.length, 16);
         });
@@ -154,13 +159,13 @@ describe('readStringTables', () => {
 describe('readDataTables', () => {
     describe('#Portal 2', () => {
         it('read data tables correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal2.dem');
+            const buffer = fs.readFileSync('./demos/public/portal2.dem');
 
-            let demo = SourceDemoParser.default()
-                .with('dataTables')
+            const demo = SourceDemoParser.default()
+                .setOptions({ dataTables: true })
                 .parse(buffer);
 
-            let { dataTable } = demo.findMessage('DataTable');
+            const { dataTable } = demo.findMessage(DemoMessages.DataTable);
 
             assert.equal(dataTable.tables.length, 307);
             assert.equal(dataTable.serverClasses.length, 236);
@@ -168,13 +173,13 @@ describe('readDataTables', () => {
     });
     describe('#Portal', () => {
         it('read data tables correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal.dem');
+            const buffer = fs.readFileSync('./demos/public/portal.dem');
 
-            let demo = SourceDemoParser.default()
-                .with('dataTables')
+            const demo = SourceDemoParser.default()
+                .setOptions({ dataTables: true })
                 .parse(buffer);
 
-            let { dataTable } = demo.findMessage('DataTable');
+            const { dataTable } = demo.findMessage(DemoMessages.DataTable);
 
             assert.equal(dataTable.tables.length, 269);
             assert.equal(dataTable.serverClasses.length, 222);
@@ -184,26 +189,26 @@ describe('readDataTables', () => {
 describe('readPackets', function() {
     describe('#Portal 2', () => {
         it('read packets correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal2_solo.dem');
+            const buffer = fs.readFileSync('./demos/public/portal2_solo.dem');
 
-            let demo = SourceDemoParser.default()
-                .with('packets')
+            const demo = SourceDemoParser.default()
+                .setOptions({ packets: true })
                 .parse(buffer);
 
-            let { packets } = demo.findMessage('Packet');
+            const { packets } = demo.findMessage(DemoMessages.Packet);
 
             assert.equal(packets.length, 22);
         });
     });
     describe('#Portal', () => {
         it('read packets correctly', () => {
-            let buffer = fs.readFileSync('./demos/public/portal.dem');
+            const buffer = fs.readFileSync('./demos/public/portal.dem');
 
-            let demo = SourceDemoParser.default()
-                .with('packets')
+            const demo = SourceDemoParser.default()
+                .setOptions({ packets: true })
                 .parse(buffer);
 
-            let { packets } = demo.findMessage('Packet');
+            const { packets } = demo.findMessage(DemoMessages.Packet);
 
             assert.equal(packets.length, 19);
         });
@@ -217,15 +222,15 @@ describe('readPackets', function() {
             const dir = './demos/private/coop/';
             const files = fs.readdirSync(dir);
 
-            let result = [];
-            for (let file of files) {
-                let buffer = fs.readFileSync(dir + file);
+            const result = [];
+            for (const file of files) {
+                const buffer = fs.readFileSync(dir + file);
 
-                let demo = SourceDemoParser.default()
-                    .with('packets')
+                const demo = SourceDemoParser.default()
+                    .setOptions({ packets: true })
                     .parse(buffer);
 
-                let { serverCount } = demo.findMessage('Packet').findPacket('SvcServerInfo');
+                const { serverCount } = demo.findMessage(DemoMessages.Packet).findPacket(NetMessages.SvcServerInfo);
 
                 result.push({ file, serverCount });
             }

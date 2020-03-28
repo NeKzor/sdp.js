@@ -7,8 +7,8 @@ const Portal = {
             offset: 1,
             type: 'start',
             match: ({ pos }) => {
-                if (pos != undefined) {
-                    let startPos = { x: -544, y: -368.75, z: 160 };
+                if (pos !== undefined) {
+                    const startPos = { x: -544, y: -368.75, z: 160 };
                     return pos.current.x === startPos.x && pos.current.y === startPos.y && pos.current.z === startPos.z;
                 }
                 return false;
@@ -19,7 +19,7 @@ const Portal = {
             offset: 1,
             type: 'end',
             match: ({ cmds }) => {
-                if (cmds != undefined) {
+                if (cmds !== undefined) {
                     return cmds.current.includes('startneurotoxins 99999');
                 }
                 return false;

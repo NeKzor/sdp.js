@@ -5,10 +5,10 @@
 ### Header Only
 
 ```js
-let buffer = fs.readFileSync('demo.dem');
+const buffer = fs.readFileSync('demo.dem');
 
-let demo = SourceDemoParser.default()
-    .without('messages')
+const demo = SourceDemoParser.default()
+    .setOptions({ messages: false })
     .parse(buffer);
 
 console.log(demo);
@@ -35,17 +35,17 @@ console.log(demo);
 ```js
 const IN_JUMP = 1 << 1;
 
-let demo = SourceDemoParser.default()
-    .with('userCmds')
+const demo = SourceDemoParser.default()
+    .setOptions({ userCmds: true })
     .parse(fs.readFileSync(file));
 
-let registeredJumps = demo.findMessages('UserCmd')
+const registeredJumps = demo.findMessages(UserCmd)
     .filter(({ userCmd }) => userCmd.buttons && userCmd.buttons & IN_JUMP);
 
-console.log('registerd jumps: ' + registeredJumps.length);
+console.log('registered jumps: ' + registeredJumps.length);
 
 /*
-    registerd jumps: 270
+    registered jumps: 270
 */
 ```
 

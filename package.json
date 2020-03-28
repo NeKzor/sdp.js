@@ -1,6 +1,6 @@
 {
     "name": "sdp.js",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Simple Source Engine demo parser for Node.js.",
     "keywords": [
         "demo-parser",
@@ -15,9 +15,10 @@
     },
     "scripts": {
         "build": "browserify -r buffer -r ./src/sdp.js:sdp -o dist/sdp.js",
-        "test": "mocha"
+        "test": "mocha",
+        "prettier": "prettier --config ./prettier.config.js --write './examples/**/*.js' './src/**/*.js' './test/**/*.js'"
     },
-    "main": "sdp.js",
+    "main": "src/sdp.js",
     "author": "NeKz",
     "dependencies": {
         "bit-buffer": "^0.2.3",
