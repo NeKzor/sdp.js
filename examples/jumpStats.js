@@ -13,9 +13,7 @@ if (!file) {
 
 const IN_JUMP = 1 << 1;
 
-const demo = SourceDemoParser.default()
-    .setOptions({ userCmds: true })
-    .parse(fs.readFileSync(file));
+const demo = SourceDemoParser.default().setOptions({ userCmds: true }).parse(fs.readFileSync(file));
 
 const registeredJumps = demo
     .findMessages(UserCmd)

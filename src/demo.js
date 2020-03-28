@@ -13,21 +13,16 @@ class SourceDemo {
         return this.demoProtocol === 4;
     }
     findMessage(type) {
-        const byType = type.prototype instanceof Message
-            ? (msg) => msg instanceof type
-            : (msg) => type(msg);
+        const byType = type.prototype instanceof Message ? (msg) => msg instanceof type : (msg) => type(msg);
         return this.messages.find(byType);
     }
     findMessages(type) {
-        const byType = type.prototype instanceof Message
-            ? (msg) => msg instanceof type
-            : (msg) => type(msg);
+        const byType = type.prototype instanceof Message ? (msg) => msg instanceof type : (msg) => type(msg);
         return this.messages.filter(byType);
     }
     findPacket(type) {
-        const byType = type.prototype instanceof NetMessage
-            ? (packet) => packet instanceof type
-            : (packet) => type(packet);
+        const byType =
+            type.prototype instanceof NetMessage ? (packet) => packet instanceof type : (packet) => type(packet);
 
         for (const msg of this.messages) {
             if (msg instanceof Packet) {
@@ -39,9 +34,8 @@ class SourceDemo {
         }
     }
     findPackets(type) {
-        const isType = type.prototype instanceof NetMessage
-            ? (packet) => packet instanceof type
-            : (packet) => type(packet);
+        const isType =
+            type.prototype instanceof NetMessage ? (packet) => packet instanceof type : (packet) => type(packet);
 
         const packets = [];
         for (const msg of this.messages) {

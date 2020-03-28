@@ -39,8 +39,9 @@ const ApertureTag = {
             type: 'start',
             match: ({ cmds }) => {
                 if (cmds !== undefined) {
-                    return cmds.current.includes('dsp_player 0')
-                        && cmds.current.includes('ss_force_primary_fullscreen 0');
+                    return (
+                        cmds.current.includes('dsp_player 0') && cmds.current.includes('ss_force_primary_fullscreen 0')
+                    );
                 }
                 return false;
             },

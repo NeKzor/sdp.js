@@ -18,7 +18,7 @@ class GameEventManager {
     deserializeEvent(buf) {
         const eventId = buf.readBits(9);
 
-        const descriptor = this.gameEvents.find(descriptor => descriptor.eventId === eventId);
+        const descriptor = this.gameEvents.find((descriptor) => descriptor.eventId === eventId);
         if (!descriptor) {
             throw new Error(`Unknown event id ${eventId}!`);
         }
