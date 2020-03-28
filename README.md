@@ -5,11 +5,12 @@
 ### Header Only
 
 ```js
-const buffer = fs.readFileSync('demo.dem');
+const { SourceDemoParser } = require('sdp.js');
+const fs = require('fs');
 
 const demo = SourceDemoParser.default()
     .setOptions({ messages: false })
-    .parse(buffer);
+    .parse(fs.readFileSync('demo.dem'));
 
 console.log(demo);
 
@@ -33,6 +34,12 @@ console.log(demo);
 ### Jump Stats
 
 ```js
+const {
+    SourceDemoParser,
+    DemoMessages: { UserCmd },
+} = require('sdp.js');
+const fs = require('fs');
+
 const IN_JUMP = 1 << 1;
 
 const demo = SourceDemoParser.default()

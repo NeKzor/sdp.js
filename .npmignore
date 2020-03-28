@@ -1,0 +1,12 @@
+.github/
+.vscode/
+demos/
+dist/
+examples/
+test/
+showcase.gif
+prettier.config.js
+tsconfig.json
+.gitattributes
+*.str
+*.html
