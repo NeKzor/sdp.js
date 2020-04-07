@@ -220,7 +220,8 @@ class SourceDemo {
         }
 
         if (endTick < 1) {
-            endTick = this.messages[this.messages.length - 1].tick;
+            const packets = this.findMessages(Packet);
+            endTick = packets[packets.length - 1].tick;
         }
 
         const delta = endTick - startTick;
