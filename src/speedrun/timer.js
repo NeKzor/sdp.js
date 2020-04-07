@@ -95,21 +95,22 @@ class SourceTimer {
             }
 
             const newCommands = [command];
-
             const value = gameInfo.get(tick);
-            if (!value) {
+
+            if (value) {
+                const { previous, current } = value.commands || {};
                 gameInfo.set(tick, {
+                    ...value,
                     commands: {
-                        previous: oldCommands,
-                        current: (oldCommands = newCommands),
+                        previous: previous ? previous.concat(oldCommands) : oldCommands,
+                        current: (oldCommands = current ? current.concat(newCommands) : newCommands),
                     },
                 });
             } else {
                 gameInfo.set(tick, {
-                    ...value,
                     commands: {
-                        previous: value.previous ? value.previous.concat(oldCommands) : oldCommands,
-                        current: (oldCommands = value.current ? value.current.concat(newCommands) : newCommands),
+                        previous: oldCommands,
+                        current: (oldCommands = newCommands),
                     },
                 });
             }
