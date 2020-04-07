@@ -17,7 +17,7 @@ class SourceDemoParser {
     static default() {
         return new this(DefaultParsingOptions);
     }
-    setOptions(options = DefaultParsingOptions) {
+    setOptions(options) {
         this.options = {
             ...this.options,
             ...options,
